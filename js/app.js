@@ -23,11 +23,14 @@ var shownPolyCounty;
 var clickedCounty;
 var clickedLayer;
 var selected_id;
+var selected_sac;
 var allData = {"features" : []};
 var latNow;
 var lngNow;
 var sacData = {};
+var sacDataNow = {};
 var nowInSAC = "";
+var nowInSACLayer = "";
 var block_layer;
 
  var countyStyleHidden = {
@@ -68,7 +71,7 @@ var block_layer;
       };
 	  
  var styleMouseOver = {
-	color: '#FF0000',
+	color: '#FFFF00',
 	fillColor: '#0000FF',
     weight: 3,
     opacity: 1,
@@ -220,6 +223,33 @@ var state_name = {
 	latNow = e.latlng.lat;
 	lngNow = e.latlng.lng;
 	
+	if (map.hasLayer(nowInSACLayer)) {
+	var results = leafletPip.pointInLayer([lngNow, latNow], nowInSACLayer);
+	if (results.length == 0) {
+		return;
+	}
+	}
+	else {
+	return;
+	}
+
+	
+	
+	
+	console.log("sacData=" + sacData);
+	
+	var hasData = false;
+	for (var key in sacData) {
+		if (key == nowInSAC) {
+			hasData = true;
+		}
+	}
+	console.log("hasData=" + hasData);
+	
+	if (!hasData){
+		return;
+	}
+	
 	if (nowInSAC != "") {
 	var data = sacData[nowInSAC];
 	var block_json = {"type": "FeatureCollection"};
@@ -241,10 +271,23 @@ var state_name = {
 	//show shape
 	console.log("show shape " + block_fips + ' providers=' + providers);
 	if (map.hasLayer(block_layer)) {
+	block_layer.off("click");
 	map.removeLayer(block_layer);
-	console.log("remove");
 	}
-	block_layer = L.geoJson(block_json, {style: blockStyle}).addTo(map);
+	block_layer = L.geoJson(block_json, {style: blockStyle});
+	block_layer.addTo(map);
+	block_layer.on("click", function(e) {
+	var sac = nowInSAC;
+	selected_sac = sac;
+	var co_name = getCoNameFromSAC(sac);
+	$("#download-co-name").html(co_name);
+	$(".download-menu").show();
+
+	
+	
+	
+	});
+	
 	}
 	//update tooltip
 	//Sabs infoText
@@ -258,12 +301,11 @@ var state_name = {
 	}
 	
 	}
-	var tooltipTxt = "<table><tr><td colspan=4 style=\"text-align: center; font-weight: bold\">" + p.co_name + ", " + p.state + "</td></tr>";
-tooltipTxt += "<tr><td >SAC ID: " + p.sac + "</td><td>SAC Area: " + p.sac_area + "</td><td>Shape Leng: " + p.shape_leng + "</td><td>Shape Area:" + p.shape_area + "</td></tr>";
 
 var tooltipTxt = "<table>";
 tooltipTxt += "<tr><td colspan=2><b>" +  p.co_name + ", " + p.state + "</b></td></tr>";
 tooltipTxt += "<tr><td>SAC ID:</td><td>" + p.sac + "</td></tr>";
+tooltipTxt += "<tr><td>Number of Blocks:</td><td>" + p.num_cblock + "</td></tr>";
 tooltipTxt += "<tr><td>SAC Area:</td><td> " + p.sac_area +  "</td></tr>";
 tooltipTxt += "<tr><td>Shape Leng:</td><td> " + p.shape_leng + "</td></tr>";
 tooltipTxt +=  "<tr><td>Shape Area:</td><td> " + p.shape_area + "</td></tr>";
@@ -273,7 +315,7 @@ tooltipTxt +=  "<tr><td>Shape Area:</td><td> " + p.shape_area + "</td></tr>";
 	var block_fips = block_json.features[0].properties.block_fips
 	var provider_names = "";
 	for (i = 0; i < num_provider; i++) {
-	provider_names += block_json.features[i].properties.provider + ', '
+	provider_names += block_json.features[i].properties.provider + '<br> '
 	}
 	
 tooltipTxt += "<tr style=\"height: 10px\"><td colspan=2></td></tr>";
@@ -284,7 +326,7 @@ tooltipTxt += "<yable>";
 
 	
 	$("#mapdata-display").html(tooltipTxt);
-$(".map-toolTip").show();
+
 
 	}
 	
@@ -292,14 +334,17 @@ $(".map-toolTip").show();
 	
  }
 
- function isInBbox(lat, lng, bbox) {
- if (lng>bbox[0] && lng < bbox[2] && lat > bbox[1] && lat < bbox[3]) {
- return true;
- }
- else {
- return false;
- }
- }
+function getCoNameFromSAC(sac) {
+for (var i = 0; i < allData.features.length; i++) {
+var f = allData.features[i];
+if (f.properties.sac == sac) {
+return f.properties.co_name;
+}
+}
+
+return "";
+
+}
  
 function mapClickAction(e) {
 	var lat = e.latlng.lat;
@@ -354,6 +399,7 @@ allDataLayer = L.geoJson(allData,  {
       style: styleShown,
       onEachFeature: onEachFeature
   }).addTo(map);
+allDataLayer.setZIndex(999);
 
 //var infoText = makeInfoText();
 //showInfo();
@@ -449,16 +495,18 @@ function onEachFeature_clicked(feature, layer) {
 function mouseover(e) {
 var layer = e.target;
 var p = layer.feature.properties;
-var text = makeTooltipTxt(p);
-$("#feature_display_div").html(text);
-$(".map-toolTip").show();
-layer.setStyle(styleMouseOver);
-
 nowInSAC = p.sac;
+console.log("over, nowInSAC=" + nowInSAC);
+
+if (map.hasLayer(nowInSACLayer)){
+map.removeLayer(nowInSACLayer);
+}
+nowInSACLayer = L.geoJson(layer.feature, {style: styleMouseOver}).addTo(map);
+console.log("sac layer " + nowInSACLayer);
 
 for (var key in sacData) {
 if (key == p.sac) {
-console.log("has key");
+
 return;
 }
 }
@@ -472,14 +520,13 @@ console.log(url);
 			dataType: "jsonp",
 			jsonpCallback: "parseResponse",
 			success: function(data) {
-			
+			console.log("ajax suc");
 			sacData[p.sac] = data;
+			console.log("ajax suc 2 secid=" + p.sac + " sac_len=" + sacData[p.sac].features.length);
+
 
 			}
 		});
-
-
-
 
 }
 
@@ -493,7 +540,7 @@ $("#feature_display_div").html(text);
 function mouseout(e) {
 var layer = e.target;
 layer.setStyle(styleShown);
-nowInSAC = "";
+//nowInSAC = "";
 }
 
 
@@ -549,15 +596,19 @@ var type0 = "gml2";
 }
 
 
-var id = selected_id;
-var id_actual = id.replace("-", ".");
+//var id = selected_id;
+//var id_actual = id.replace("-", ".");
+
+
 
 //get sac
-for (var i = 0; i < allData.features.length; i++) {
-if (allData.features[i].id == id_actual) {
-var sac = allData.features[i].properties.sac;
-}
-}
+//for (var i = 0; i < allData.features.length; i++) {
+//if (allData.features[i].id == id_actual) {
+//var sac = allData.features[i].properties.sac;
+//}
+//}
+
+var sac = selected_sac;
 
 var url = geo_host + "/geoserver/" + geo_space + "/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=" + geo_space + ":overbuilt_blocks06102015&maxFeatures=10000&outputFormat=" + type0 + "&cql_filter=sac_id=%27" + sac + "%27";
 
@@ -728,6 +779,11 @@ function showNationMapData() {
          locChange();
      });
 
+	 $("#input-sac-search").on("click", function(e) {
+         e.preventDefault();
+         searchSAC();
+     });
+	 
      $('#btn-geoLocation').click(function(event) {
          if (navigator.geolocation) {
              navigator.geolocation.getCurrentPosition(function(position) {
@@ -735,21 +791,21 @@ function showNationMapData() {
                  var geo_lon = position.coords.longitude;
                  var geo_acc = position.coords.accuracy;
 
-                 //map.setView([geo_lat, geo_lon], 12);
+                 map.setView([geo_lat, geo_lon], 12);
 				 
 				var url = geo_host + "/geoserver/" + geo_space+ "/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=" + geo_space + ":caftwo_caf_counties_merge&maxFeatures=1&outputFormat=json&cql_filter=contains(geom,%20POINT(" + geo_lon + " " + geo_lat + "))&callback=parseResponse&format_options=callback:parseResponse";
 
-	$.ajax({
-			type: "GET",
-			url: url,
-			//dataType: "json",
-			dataType: "jsonp",
-			jsonpCallback: "parseResponse",
-			success: function(data) {
+	//$.ajax({
+	//		type: "GET",
+	//		url: url,
+	//		dataType: "json",
+	//		dataType: "jsonp",
+	//		jsonpCallback: "parseResponse",
+	//		success: function(data) {
 
-				showSearchedCounty(data);					
-			}
-		});
+	//			showSearchedCounty(data);					
+	//		}
+	//	});
 				 
 
              }, function(error) {
@@ -777,7 +833,74 @@ function showNationMapData() {
 	    $('#input-loc-search').click();
 	    return false;  
 	  }
-	});   
+	});  
+
+	$( "#input-sac" ).autocomplete({
+        source: function( request, response ) {
+			var sac = request.term;
+			sac_list = getSacList(sac);
+			response(sac_list);
+			
+			//var urlAutoComp = geo_host +"/geoserver/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName="+ geo_space +":ror_sac&count=10&propertyName=sac&outputFormat="+ geo_output +"&sortBy=sac&cql_filter=sac+like+'" + sac + "%25'&format_options=callback:callbackAutoComp";
+			//var urlAutoComp = geo_host +"/geoserver/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName="+ geo_space +":ror_sac&count=10&propertyName=sac&outputFormat="+ geo_output +"&sortBy=sac&cql_filter=sac+like+'" + sac + "%25'";
+
+			//$.ajax({
+				//type: "GET",
+				//url: urlAutoComp,
+				//dataType: "json",
+				//dataType: "jsonp",
+				//jsonpCallback: "callbackAutoComp",
+				//success: function( data ) {
+				//	var features = data.features;
+				//	sac_list = [];
+				//	for (var i = 0; i < features.length; i++) {
+				//		sac_list.push(features[i].properties.sac);
+				//	}
+
+				//	response( sac_list );
+				//}
+			//});
+        },
+        minLength: 2,
+        select: function( event, ui ) {
+            setTimeout(function() {searchSAC();}, 200);
+			//searchSAC();
+        },
+        open: function() {
+			$( this ).removeClass( "ui-corner-all" ).addClass( "ui-corner-top" );
+        },
+        close: function() {
+			$( this ).removeClass( "ui-corner-top" ).addClass( "ui-corner-all" );
+        }
+	});
+	
+	
+	$("#input-search-switch").on('click', 'a', function(e) {
+		var search = $(e.currentTarget).data('value');
+
+		e.preventDefault();	
+
+		$("#input-sac").val('');
+        $("#input-location").val('');
+		
+		if (search == 'loc') {
+			$("#input-sac").css('display', 'none');
+			$("#span-sac-search").css('display', 'none');
+			
+			$("#input-location").css('display', 'block');
+			$("#span-location-search").css('display', 'table-cell');
+			$("#btn-label").text('Location');
+        }
+        else {
+            $("#input-sac").css('display', 'block');
+            $("#span-sac-search").css('display', 'table-cell');
+			
+            $("#input-location").css('display', 'none');
+            $("#span-location-search").css('display', 'none');
+            $("#btn-label").text('SAC');
+        }
+	});
+	
     
  }
  
@@ -828,6 +951,69 @@ function showNationMapData() {
  function hideMapLegendBox() {
      $("#map-legend-box").hide()
  }
+ 
+ function getSacList(sac) {
+ var sac_list = [];
+ var pat = '^' + sac + '.*';
+ var re = new RegExp(pat, "g");
+ var f = allData.features;
+ for (var i = 0; i < f.length; i++) {
+	var sac0 = f[i].properties.sac;
+	if (sac0.match(re)) {
+	sac_list.push(sac0);
+	}
+ }
+ 
+ return sac_list;
+ }
+ 
+function searchSAC() {
+var sac = $("#input-sac").val();
+
+var sac_json = {"type": "FeaturesCollection", "features": []};
+var features = [];
+for (var i = 0; i < allData.features.length; i++) {
+var sac0 = allData.features[i].properties.sac;
+if (sac0 == sac) {
+features.push(allData.features[i]);
+}
+}
+
+if (features.length == 0) {
+return;
+}
+
+sac_json.features = features;
+sacSelectedLayer = L.geoJson(sac_json);
+var b = sacSelectedLayer.getBounds();
+map.fitBounds(b);
+
+//display company info on right side bar
+var p = sac_json.features[0].properties;
+var text = getCompanyInfo(p);
+
+$("#mapdata-display").html(text);
+
+$("#download-co-name").html(p.co_name);
+$(".download-menu").show();
+selected_sac = sac;
+
+}
+ 
+ function getCompanyInfo(p) {
+ var tooltipTxt = "<table>";
+tooltipTxt += "<tr><td colspan=2><b>" +  p.co_name + ", " + p.state + "</b></td></tr>";
+tooltipTxt += "<tr><td>SAC ID:</td><td>" + p.sac + "</td></tr>";
+tooltipTxt += "<tr><td>Number of Blocks:</td><td>" + p.num_cblock + "</td></tr>";
+tooltipTxt += "<tr><td>SAC Area:</td><td> " + p.sac_area +  "</td></tr>";
+tooltipTxt += "</table>";
+
+ return tooltipTxt;
+ }
+ 
+ 
+ 
+ 
  
 
  $(document).ready(function() {

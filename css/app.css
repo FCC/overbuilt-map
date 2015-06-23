@@ -30,8 +30,8 @@ a, a:hover, a:focus { text-decoration: none; }
 
 #mapdata-display table {padding: 5px;}
 #mapdata-display table tr:hover {background-color: #F0F0B6;}
-#mapdata-display table td {vertical-align: bottom; text-align: left; padding-left: 3px; padding-right: 3px; cursor: pointer}
-#mapdata-display table th {vertical-align: bottom; text-align: right; padding-left: 3px;padding-right: 3px; } 
+#mapdata-display table td {vertical-align: top; text-align: left; padding-left: 3px; padding-right: 3px; cursor: pointer}
+#mapdata-display table th {vertical-align: top; text-align: right; padding-left: 3px;padding-right: 3px; } 
 
 
   
