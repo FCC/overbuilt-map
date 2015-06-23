@@ -24,6 +24,11 @@ var clickedCounty;
 var clickedLayer;
 var selected_id;
 var allData = {"features" : []};
+var latNow;
+var lngNow;
+var sacData = {};
+var nowInSAC = "";
+var block_layer;
 
  var countyStyleHidden = {
           weight: 0,
@@ -68,6 +73,14 @@ var allData = {"features" : []};
     weight: 3,
     opacity: 1,
     fillOpacity: 0.0
+      };
+	  
+ var blockStyle = {
+	color: '#FFFF00',
+	fillColor: '#FFFF00',
+    weight: 3,
+    opacity: 1,
+    fillOpacity: 0.25
       };
 	  
 var state_name = {
@@ -168,8 +181,9 @@ var state_name = {
          'Satellite': baseSatellite,
          'Terrain': baseTerrain
      }, {
-		'Overbuilt Sabs': wms_overbuilt_sabs.addTo(map),
-		'Overbult Blocks': wms_overbuilt_blocks.addTo(map)
+	 	'Overbult Blocks': wms_overbuilt_blocks.addTo(map),
+		'Overbuilt Sabs': wms_overbuilt_sabs.addTo(map)
+
      }, {
          position: 'topleft'
      }).addTo(map);
@@ -201,8 +215,92 @@ var state_name = {
 	map.on("click", function(e) {
 	mapClickAction(e);
 	});
+	
+	map.on("mousemove", function(e) {
+	latNow = e.latlng.lat;
+	lngNow = e.latlng.lng;
+	
+	if (nowInSAC != "") {
+	var data = sacData[nowInSAC];
+	var block_json = {"type": "FeatureCollection"};
+	var features = []
+	var providers = []
+	console.log("lenn features=" + data.features.length);
+	for (var i = 0; i < data.features.length; i++) {
+	var b_layer = L.geoJson(data.features[i]);
+	var results = leafletPip.pointInLayer([lngNow, latNow], b_layer);
+	if (results.length > 0) {
+	features.push(data.features[i]);
+	providers.push(data.features[i].properties.provider);
+	}
+	}
+	block_json.features = features;
+	if (block_json.features.length > 0) {
+	console.log("features=" + block_json.features.length);
+	var block_fips = block_json.features[0].properties.block_fips;
+	//show shape
+	console.log("show shape " + block_fips + ' providers=' + providers);
+	if (map.hasLayer(block_layer)) {
+	map.removeLayer(block_layer);
+	console.log("remove");
+	}
+	block_layer = L.geoJson(block_json, {style: blockStyle}).addTo(map);
+	}
+	//update tooltip
+	//Sabs infoText
+	var text = "";
+
+	for (var i = 0; i < allData.features.length; i++) {
+	var p0 = allData.features[i].properties;
+	if (p0.sac == nowInSAC) {
+	var p = p0;
+	text += p.co_name + ' ' + p.state + ' ' + p.sac_area + ' ' + p.shape_leng + ' ' +  p.shape_area + ' ' + p.num_cblock;
+	}
+	
+	}
+	var tooltipTxt = "<table><tr><td colspan=4 style=\"text-align: center; font-weight: bold\">" + p.co_name + ", " + p.state + "</td></tr>";
+tooltipTxt += "<tr><td >SAC ID: " + p.sac + "</td><td>SAC Area: " + p.sac_area + "</td><td>Shape Leng: " + p.shape_leng + "</td><td>Shape Area:" + p.shape_area + "</td></tr>";
+
+var tooltipTxt = "<table>";
+tooltipTxt += "<tr><td colspan=2><b>" +  p.co_name + ", " + p.state + "</b></td></tr>";
+tooltipTxt += "<tr><td>SAC ID:</td><td>" + p.sac + "</td></tr>";
+tooltipTxt += "<tr><td>SAC Area:</td><td> " + p.sac_area +  "</td></tr>";
+tooltipTxt += "<tr><td>Shape Leng:</td><td> " + p.shape_leng + "</td></tr>";
+tooltipTxt +=  "<tr><td>Shape Area:</td><td> " + p.shape_area + "</td></tr>";
+
+	//block info
+	var num_provider = block_json.features.length;
+	var block_fips = block_json.features[0].properties.block_fips
+	var provider_names = "";
+	for (i = 0; i < num_provider; i++) {
+	provider_names += block_json.features[i].properties.provider + ', '
+	}
+	
+tooltipTxt += "<tr style=\"height: 10px\"><td colspan=2></td></tr>";
+tooltipTxt += "<tr><td>Block FIPS:</td><td> " + block_fips + "</td></tr>";
+tooltipTxt += "<tr><td>Number of Competitors:</td><td>" + num_provider + "</td></tr>";
+tooltipTxt += "<tr><td>Competitors:</td><td> " + provider_names + "</td></tr>";
+tooltipTxt += "<yable>";
+
+	
+	$("#mapdata-display").html(tooltipTxt);
+$(".map-toolTip").show();
+
+	}
+	
+	});
+	
  }
 
+ function isInBbox(lat, lng, bbox) {
+ if (lng>bbox[0] && lng < bbox[2] && lat > bbox[1] && lat < bbox[3]) {
+ return true;
+ }
+ else {
+ return false;
+ }
+ }
+ 
 function mapClickAction(e) {
 	var lat = e.latlng.lat;
 	var lng = e.latlng.lng;
@@ -257,7 +355,7 @@ allDataLayer = L.geoJson(allData,  {
       onEachFeature: onEachFeature
   }).addTo(map);
 
-var infoText = makeInfoText();
+//var infoText = makeInfoText();
 //showInfo();
 }
 
@@ -355,6 +453,34 @@ var text = makeTooltipTxt(p);
 $("#feature_display_div").html(text);
 $(".map-toolTip").show();
 layer.setStyle(styleMouseOver);
+
+nowInSAC = p.sac;
+
+for (var key in sacData) {
+if (key == p.sac) {
+console.log("has key");
+return;
+}
+}
+
+	var url = geo_host + "/geoserver/" + geo_space+ "/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=" + geo_space + ":overbuilt_blocks&maxFeatures=10000&outputFormat=text/javascript&callback=parseResponse&format_options=callback:parseResponse&cql_filter=sac_id='" + p.sac + "'";
+console.log(url);
+	$.ajax({
+			type: "GET",
+			url: url,
+			//dataType: "json",
+			dataType: "jsonp",
+			jsonpCallback: "parseResponse",
+			success: function(data) {
+			
+			sacData[p.sac] = data;
+
+			}
+		});
+
+
+
+
 }
 
 function mouseover_clicked(e) {
@@ -367,6 +493,7 @@ $("#feature_display_div").html(text);
 function mouseout(e) {
 var layer = e.target;
 layer.setStyle(styleShown);
+nowInSAC = "";
 }
 
 
