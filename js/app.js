@@ -24,7 +24,12 @@ var clickedCounty;
 var clickedLayer;
 var selected_id;
 var selected_sac;
+var selected_co_name;
+var selected_provider;
 var allData = {"features" : []};
+var providerInfo = {"features" : []};
+var providerList = [];
+var providerSacLatLon = {}
 var latNow;
 var lngNow;
 var sacData = {};
@@ -32,6 +37,8 @@ var sacDataNow = {};
 var nowInSAC = "";
 var nowInSACLayer = "";
 var block_layer;
+var providerLayer;
+var downloadWhat = "";
 
  var countyStyleHidden = {
           weight: 0,
@@ -71,7 +78,7 @@ var block_layer;
       };
 	  
  var styleMouseOver = {
-	color: '#FFFF00',
+	color: '#00FF00',
 	fillColor: '#0000FF',
     weight: 3,
     opacity: 1,
@@ -81,7 +88,7 @@ var block_layer;
  var blockStyle = {
 	color: '#FFFF00',
 	fillColor: '#FFFF00',
-    weight: 3,
+    weight: 1,
     opacity: 1,
     fillOpacity: 0.25
       };
@@ -188,8 +195,9 @@ var state_name = {
 		'Overbuilt Sabs': wms_overbuilt_sabs.addTo(map)
 
      }, {
-         position: 'topleft'
-     }).addTo(map);
+		position: 'topleft'
+	 
+	 }).addTo(map);
 	 
 	 
 	map.on("zoomend dragend", function(e) {
@@ -279,6 +287,7 @@ var state_name = {
 	block_layer.on("click", function(e) {
 	var sac = nowInSAC;
 	selected_sac = sac;
+	downloadWhat = "co_name";
 	var co_name = getCoNameFromSAC(sac);
 	$("#download-co-name").html(co_name);
 	$(".download-menu").show();
@@ -387,11 +396,33 @@ function loadAllData() {
 			dataType: "jsonp",
 			jsonpCallback: "parseResponse",
 			success: function(data) {
+				if (data.features[0].id.match(/overbuilt_sabs/)){
 				allData = data;
 				displayAllData();
+				}
 			}
 		});
 }
+
+
+function getProviderInfo() {
+	var url = geo_host + "/geoserver/" + geo_space+ "/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=" + geo_space + ":overbuilt_blocks&maxFeatures=20000&propertyName=provider,sac_id&sortBy=provider,sac_id&outputFormat=text/javascript&callback=parseResponse&format_options=callback:parseResponse";
+	$.ajax({
+			type: "GET",
+			url: url,
+			//dataType: "json",
+			dataType: "jsonp",
+			jsonpCallback: "parseResponse",
+			success: function(data) {
+				if (data.features[0].id.match(/overbuilt_blocks/)){
+				providerInfo = data;
+				processProviderInfo();
+				}
+				
+			}
+		});
+}
+
 
 function displayAllData() {
 
@@ -404,6 +435,75 @@ allDataLayer.setZIndex(999);
 //var infoText = makeInfoText();
 //showInfo();
 }
+
+function processProviderInfo() {
+var i, j;
+var provider_name_sac_all = [];
+for (i = 0; i < providerInfo.features.length; i++) {
+provider_name_sac_all.push([providerInfo.features[i].properties.provider, providerInfo.features[i].properties.sac_id]);
+}
+
+//get unique
+var provider_name_sac_uniq = [];
+for (i = 0; i < provider_name_sac_all.length-1; i++) {
+if (provider_name_sac_all[i][0] != provider_name_sac_all[i+1][0] || provider_name_sac_all[i][1] != provider_name_sac_all[i+1][1]) {
+provider_name_sac_uniq.push(provider_name_sac_all[i]);
+}
+}
+provider_name_sac_uniq.push(provider_name_sac_all[provider_name_sac_all.length-1]);
+
+for (i=0; i<provider_name_sac_uniq.length; i++) {
+console.log(provider_name_sac_uniq[i][0] + ' ' + provider_name_sac_uniq[i][1]);
+}
+
+providerList = [];
+for (i=0; i<provider_name_sac_uniq.length-1; i++) {
+if (provider_name_sac_uniq[i][0] != provider_name_sac_uniq[i+1][0]) {
+providerList.push(provider_name_sac_uniq[i][0]);
+}
+}
+providerList.push(provider_name_sac_uniq[provider_name_sac_uniq.length-1][0]);
+
+for (i=0; i<providerList.length; i++) {
+console.log(providerList[i]);
+}
+
+providerSacLatLon = {};
+for (i=0; i<providerList.length; i++) {
+var sac_latlon_arr = [];
+for (j = 0; j < provider_name_sac_uniq.length; j++) {
+if (provider_name_sac_uniq[j][0] == providerList[i]){
+var latlon = getSACCenter(provider_name_sac_uniq[j][1]);
+var sac_latlon_item = {};
+sac_latlon_item.sac = provider_name_sac_uniq[j][1];
+sac_latlon_item.lat = latlon.lat;
+sac_latlon_item.lon = latlon.lon;
+sac_latlon_arr.push(sac_latlon_item);
+}
+
+}
+providerSacLatLon[providerList[i]] = sac_latlon_arr;
+
+}
+}
+
+
+function getSACCenter(sac) {
+var i;
+
+var bbox = [0, 0, 0, 0];
+for (i=0; i<allData.features.length; i++) {
+if (allData.features[i].properties.sac == sac) {
+var bbox = allData.features[i].properties.bbox;
+}
+}
+
+var lat = (bbox[1] + bbox[3]) / 2;
+var lon = (bbox[0] + bbox[2]) / 2;
+
+return {"lat": lat, "lon": lon};
+}
+
 
 function makeInfoText() {
 var f = allData.features;
@@ -596,21 +696,15 @@ var type0 = "gml2";
 }
 
 
-//var id = selected_id;
-//var id_actual = id.replace("-", ".");
-
-
-
-//get sac
-//for (var i = 0; i < allData.features.length; i++) {
-//if (allData.features[i].id == id_actual) {
-//var sac = allData.features[i].properties.sac;
-//}
-//}
-
+if (downloadWhat == "sac" || downloadWhat == "co_name") {
 var sac = selected_sac;
-
-var url = geo_host + "/geoserver/" + geo_space + "/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=" + geo_space + ":overbuilt_blocks06102015&maxFeatures=10000&outputFormat=" + type0 + "&cql_filter=sac_id=%27" + sac + "%27";
+var url = geo_host + "/geoserver/" + geo_space + "/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=" + geo_space + ":overbuilt_blocks&maxFeatures=20000&outputFormat=" + type0 + "&cql_filter=sac_id=%27" + sac + "%27";
+}
+else {
+var provider = selected_provider;
+provider = provider.replace(/ /g, "+");
+var url = geo_host + "/geoserver/" + geo_space + "/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=" + geo_space + ":overbuilt_blocks&maxFeatures=20000&outputFormat=" + type0 + "&cql_filter=provider=%27" + provider + "%27";
+}
 
 var newwin = window.open(url);
 console.log(url);
@@ -784,6 +878,16 @@ function showNationMapData() {
          searchSAC();
      });
 	 
+	 $("#input-co_name-search").on("click", function(e) {
+         e.preventDefault();
+         searchCoName();
+     });
+	 
+	 $("#input-provider-search").on("click", function(e) {
+         e.preventDefault();
+         searchProvider();
+     });
+	 
      $('#btn-geoLocation').click(function(event) {
          if (navigator.geolocation) {
              navigator.geolocation.getCurrentPosition(function(position) {
@@ -834,6 +938,33 @@ function showNationMapData() {
 	    return false;  
 	  }
 	});  
+	
+	$('#input-sac').keypress(function (e) {
+	 var key = e.which;
+	 if(key == 13)  // the enter key code
+	  {
+	    $('#input-sac-search').click();
+	    return false;  
+	  }
+	});
+	
+	$('#input-co_name').keypress(function (e) {
+	 var key = e.which;
+	 if(key == 13)  // the enter key code
+	  {
+	    $('#input-co_name-search').click();
+	    return false;  
+	  }
+	});
+	
+	$('#input-provider').keypress(function (e) {
+	 var key = e.which;
+	 if(key == 13)  // the enter key code
+	  {
+	    $('#input-provider-search').click();
+	    return false;  
+	  }
+	});
 
 	$( "#input-sac" ).autocomplete({
         source: function( request, response ) {
@@ -874,6 +1005,84 @@ function showNationMapData() {
         }
 	});
 	
+	$( "#input-co_name" ).autocomplete({
+        source: function( request, response ) {
+			var co_name = request.term;
+			co_name_list = getCoNameList(co_name);
+			response(co_name_list);
+			
+			//var urlAutoComp = geo_host +"/geoserver/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName="+ geo_space +":ror_sac&count=10&propertyName=sac&outputFormat="+ geo_output +"&sortBy=sac&cql_filter=sac+like+'" + sac + "%25'&format_options=callback:callbackAutoComp";
+			//var urlAutoComp = geo_host +"/geoserver/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName="+ geo_space +":ror_sac&count=10&propertyName=sac&outputFormat="+ geo_output +"&sortBy=sac&cql_filter=sac+like+'" + sac + "%25'";
+
+			//$.ajax({
+				//type: "GET",
+				//url: urlAutoComp,
+				//dataType: "json",
+				//dataType: "jsonp",
+				//jsonpCallback: "callbackAutoComp",
+				//success: function( data ) {
+				//	var features = data.features;
+				//	sac_list = [];
+				//	for (var i = 0; i < features.length; i++) {
+				//		sac_list.push(features[i].properties.sac);
+				//	}
+
+				//	response( sac_list );
+				//}
+			//});
+        },
+        minLength: 2,
+        select: function( event, ui ) {
+            setTimeout(function() {searchCoName();}, 200);
+			//searchSAC();
+        },
+        open: function() {
+			$( this ).removeClass( "ui-corner-all" ).addClass( "ui-corner-top" );
+        },
+        close: function() {
+			$( this ).removeClass( "ui-corner-top" ).addClass( "ui-corner-all" );
+        }
+	});
+	
+	
+	$( "#input-provider" ).autocomplete({
+        source: function( request, response ) {
+			var provider = request.term;
+			provider_list = getProviderList(provider);
+			response(provider_list);
+			
+			//var urlAutoComp = geo_host +"/geoserver/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName="+ geo_space +":ror_sac&count=10&propertyName=sac&outputFormat="+ geo_output +"&sortBy=sac&cql_filter=sac+like+'" + sac + "%25'&format_options=callback:callbackAutoComp";
+			//var urlAutoComp = geo_host +"/geoserver/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName="+ geo_space +":ror_sac&count=10&propertyName=sac&outputFormat="+ geo_output +"&sortBy=sac&cql_filter=sac+like+'" + sac + "%25'";
+
+			//$.ajax({
+				//type: "GET",
+				//url: urlAutoComp,
+				//dataType: "json",
+				//dataType: "jsonp",
+				//jsonpCallback: "callbackAutoComp",
+				//success: function( data ) {
+				//	var features = data.features;
+				//	sac_list = [];
+				//	for (var i = 0; i < features.length; i++) {
+				//		sac_list.push(features[i].properties.sac);
+				//	}
+
+				//	response( sac_list );
+				//}
+			//});
+        },
+        minLength: 2,
+        select: function( event, ui ) {
+            setTimeout(function() {searchProvider();}, 200);
+			//searchSAC();
+        },
+        open: function() {
+			$( this ).removeClass( "ui-corner-all" ).addClass( "ui-corner-top" );
+        },
+        close: function() {
+			$( this ).removeClass( "ui-corner-top" ).addClass( "ui-corner-all" );
+        }
+	});
 	
 	$("#input-search-switch").on('click', 'a', function(e) {
 		var search = $(e.currentTarget).data('value');
@@ -882,23 +1091,64 @@ function showNationMapData() {
 
 		$("#input-sac").val('');
         $("#input-location").val('');
+		$("#input-co_name").val('');
+		$("#input-provider").val('');
 		
 		if (search == 'loc') {
 			$("#input-sac").css('display', 'none');
 			$("#span-sac-search").css('display', 'none');
+			$("#input-co_name").css('display', 'none');
+			$("#span-co_name-search").css('display', 'none');
+			$("#input-provider").css('display', 'none');
+			$("#span-provider-search").css('display', 'none');
 			
 			$("#input-location").css('display', 'block');
 			$("#span-location-search").css('display', 'table-cell');
 			$("#btn-label").text('Location');
         }
-        else {
+
+        else if (search == 'sac') {
+		    $("#input-location").css('display', 'none');
+            $("#span-location-search").css('display', 'none');
+			$("#input-co_name").css('display', 'none');
+			$("#span-co_name-search").css('display', 'none');
+			$("#input-provider").css('display', 'none');
+			$("#span-provider-search").css('display', 'none');
+			
             $("#input-sac").css('display', 'block');
             $("#span-sac-search").css('display', 'table-cell');
-			
-            $("#input-location").css('display', 'none');
-            $("#span-location-search").css('display', 'none');
-            $("#btn-label").text('SAC');
+			$("#btn-label").text('SAC');
         }
+		
+		else if (search == 'co_name') {
+		    $("#input-location").css('display', 'none');
+            $("#span-location-search").css('display', 'none');
+			$("#input-sac").css('display', 'none');
+			$("#span-sac-search").css('display', 'none');
+			$("#input-provider").css('display', 'none');
+			$("#span-provider-search").css('display', 'none');
+			
+            $("#input-co_name").css('display', 'block');
+            $("#span-co_name-search").css('display', 'table-cell');
+			$("#btn-label").text('Company');
+        }
+		
+		else if (search == 'provider') {
+		    $("#input-location").css('display', 'none');
+            $("#span-location-search").css('display', 'none');
+			$("#input-sac").css('display', 'none');
+			$("#span-sac-search").css('display', 'none');
+			$("#input-co_name").css('display', 'none');
+			$("#span-co_name-search").css('display', 'none');
+			
+            $("#input-provider").css('display', 'block');
+            $("#span-provider-search").css('display', 'table-cell');
+			$("#btn-label").text('Competitor');
+        }
+		
+		
+		
+		
 	});
 	
     
@@ -967,7 +1217,61 @@ function showNationMapData() {
  return sac_list;
  }
  
+ function getCoNameList(co_name) {
+ 
+ var pat_first = '^' + co_name + '.*';
+ var re_first = new RegExp(pat_first, 'gi');
+ var pat_other = '.*' + co_name + '.*';
+ var re_other = new RegExp(pat_other, 'gi');
+ 
+ var f = allData.features;
+ var list_first = [];
+ var list_other = [];
+ for (var i = 0; i < f.length; i++) {
+ var name = f[i].properties.co_name;
+ if (name.match(re_first)){
+ list_first.push(name);
+ }
+ else if (name.match(re_other)) {
+  list_other.push(name);
+ }
+ }
+ 
+var list_all = list_first.concat(list_other);
+list_all = list_all.slice(0, 10);
+
+return list_all;
+ }
+ 
+ 
+ function getProviderList(provider) {
+ 
+ var pat_first = '^' + provider + '.*';
+ var re_first = new RegExp(pat_first, 'gi');
+ var pat_other = '.*' + provider + '.*';
+ var re_other = new RegExp(pat_other, 'gi');
+ 
+ var list_first = [];
+ var list_other = [];
+ for (var i = 0; i < providerList.length; i++) {
+ if (providerList[i].match(re_first)){
+ list_first.push(providerList[i]);
+ }
+ else if (providerList[i].match(re_other)) {
+  list_other.push(providerList[i]);
+ }
+ }
+ 
+var list_all = list_first.concat(list_other);
+list_all = list_all.slice(0, 10);
+
+return list_all; 
+}
+ 
+ 
+ 
 function searchSAC() {
+
 var sac = $("#input-sac").val();
 
 var sac_json = {"type": "FeaturesCollection", "features": []};
@@ -994,9 +1298,45 @@ var text = getCompanyInfo(p);
 
 $("#mapdata-display").html(text);
 
-$("#download-co-name").html(p.co_name);
+$("#download-co-name").html(p.co_name + " [" + p.sac + "]");
 $(".download-menu").show();
 selected_sac = sac;
+downloadWhat = "sac";
+
+}
+
+function searchCoName() {
+var co_name = $("#input-co_name").val();
+
+var sac_json = {"type": "FeaturesCollection", "features": []};
+var features = [];
+for (var i = 0; i < allData.features.length; i++) {
+var co_name0 = allData.features[i].properties.co_name;
+if (co_name0 == co_name) {
+features.push(allData.features[i]);
+}
+}
+
+if (features.length == 0) {
+return;
+}
+
+sac_json.features = features;
+sacSelectedLayer = L.geoJson(sac_json);
+var b = sacSelectedLayer.getBounds();
+map.fitBounds(b);
+
+//display company info on right side bar
+var p = sac_json.features[0].properties;
+var text = getCompanyInfo(p);
+
+$("#mapdata-display").html(text);
+
+$("#download-co-name").html(p.co_name + " [" + p.sac + "]");
+$(".download-menu").show();
+selected_co_name = co_name;
+selected_sac = p.sac;
+downloadWhat = "co_name";
 
 }
  
@@ -1011,8 +1351,103 @@ tooltipTxt += "</table>";
  return tooltipTxt;
  }
  
+ function searchProvider() {
+var provider = $("#input-provider").val();
+
+var sac_latlon = providerSacLatLon[provider];
+
+var features = [];
+for (var i = 0; i < sac_latlon.length; i++) {
+var feature = {"type": "Feature",
+				"geometry": {"type": "Point", "coordinates": [sac_latlon[i].lon, sac_latlon[i].lat]},
+				"properties": {"sac": sac_latlon[i].sac, "marker-title": sac_latlon[i].sac}
+				};
+features.push(feature);
+};
+
+var json_provider = {"type": "FeatureCollection", "features": features};
+
+if (map.hasLayer(providerLayer)) {
+map.removeLayer(providerLayer);
+}
+
+providerLayer = L.geoJson(json_provider, {
+			onEachFeature: onEachFeature_provider
+			
+			}).addTo(map);
+
+if (json_provider.features.length > 1) {
+var b = providerLayer.getBounds();
+map.fitBounds(b);
+}
+else {
+var sac = json_provider.features[0].properties.sac;
+zoomToSAC(sac);
+}
+
+var text = getProviderText(provider);
+
+console.log(text);
+
+$("#mapdata-display").html(text);
+
+$("#download-co-name").html(provider);
+$(".download-menu").show();
+selected_provider = provider;
+downloadWhat = "provider";
+
+}
  
  
+function getProviderText(provider) {
+
+var text = "<table>";
+text += "<tr><td>Competitor: </td><td>" + provider + "</td></tr>";
+var sac_latlon = providerSacLatLon[provider];
+var str1 = "";
+for (var i = 0; i < sac_latlon.length; i++) {
+str1 += "<span style=\"cursor: pointer; color: #3333AA; hover: {color: #FFFF00}\" onclick=\"zoomToSAC('" + sac_latlon[i].sac + "')\">" + sac_latlon[i].sac + "</span><br>";
+
+}
+
+text += "<tr><td>Overlapping SACs:</td><td> " + str1 + "</td></tr>";
+text += "</table>";
+
+return text;
+}
+ 
+function onEachFeature_provider(feature, layer) {
+      layer.on({
+		click: click_provider
+      });
+  }
+ 
+ 
+function click_provider(e) {
+var layer = e.target;
+var p = layer.feature.properties;
+zoomToSAC(p.sac);
+}
+ 
+function zoomToSAC(sac) {
+var f = getFeatureBySAC(sac);
+var layer = L.geoJson(f);
+var b = layer.getBounds();
+map.fitBounds(b);
+
+}
+ 
+function getFeatureBySAC(sac) {
+var f = {};
+for (var i = 0; i < allData.features.length; i++) {
+if (allData.features[i].properties.sac == sac) {
+f = allData.features[i];
+}
+}
+
+return f;
+}
+
  
  
 
@@ -1020,6 +1455,7 @@ tooltipTxt += "</table>";
      createMap();
      setListener();
 	 loadAllData();
+	 setTimeout(function(){ getProviderInfo(); }, 2000);
 
      $('.btn-legend').click(function(){ 
         $(this).hide();

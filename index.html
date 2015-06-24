@@ -39,6 +39,8 @@
                                     <button aria-expanded="false" data-toggle="dropdown" class="btn btn-default dropdown-toggle" type="button"><span id="btn-label">SAC</span> <span class="caret"></span></button>
                                     <ul id="input-search-switch" role="menu" class="dropdown-menu">
 									    <li><a href="#" data-value="sac">SAC</a></li>
+										<li><a href="#" data-value="co_name">Company</a></li>
+										<li><a href="#" data-value="provider">Competitor</a></li>
                                         <li><a href="#" data-value="loc">Location</a></li>
                                     </ul>
                                 </div>
@@ -46,13 +48,23 @@
 								
 								<input id="input-sac" class="form-control" type="search" placeholder="Enter SAC" style="display: block">
                                 <input id="input-location" class="form-control" type="search" placeholder="Enter Location" style="display: none">
-
-                                <span class="input-group-btn" id="span-location-search" style="display: table-cell">                        
+								<input id="input-co_name" class="form-control" type="search" placeholder="Enter Company Name" style="display: none">
+								<input id="input-provider" class="form-control" type="search" placeholder="Enter Competitor Name" style="display: none">
+ 
+                                <span class="input-group-btn" id="span-location-search" style="display: none">                        
 									<button class="btn-search btn btn-default" type="submit" id="input-loc-search" title="Location Search" data-toggle="tooltip" data-placement="top"><span class="glyphicon glyphicon-search"></span><span class="sr-only">Location Search</span></button>
                                 </span>
 								
                                 <span class="input-group-btn" id="span-sac-search" style="display: table-cell">                        
 									<button class="btn-search btn btn-default" id="input-sac-search" title="SAC Search" data-toggle="tooltip" data-placement="top"><span class="glyphicon glyphicon-search"></span><span class="sr-only">SAC Search</span></button>
+                                </span>
+								
+								<span class="input-group-btn" id="span-co_name-search" style="display: none">                        
+									<button class="btn-search btn btn-default" id="input-co_name-search" title="Comapy Search" data-toggle="tooltip" data-placement="top"><span class="glyphicon glyphicon-search"></span><span class="sr-only">Company Search</span></button>
+                                </span>
+								
+								<span class="input-group-btn" id="span-provider-search" style="display: none">                        
+									<button class="btn-search btn btn-default" id="input-provider-search" title="Competitor Search" data-toggle="tooltip" data-placement="top"><span class="glyphicon glyphicon-search"></span><span class="sr-only">Competitor Search</span></button>
                                 </span>
 								
                             </div>
@@ -85,9 +97,11 @@
 						</button> 
 							-->
                     </div>
+					
                     <div id="tooltip_box_div" class="map-toolTip" style="position: absolute; right: 5px; top: 5px">
                         <div id="feature_display_div" class="tooltipTxt"></div>
-                    </div>	
+                    </div>
+					
 					
 					
 					<div id="download-menu-box" class="download-menu" style="width: 270px">
