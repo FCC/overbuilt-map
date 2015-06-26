@@ -159,7 +159,7 @@ var state_name = {
              attributionControl: true,
              maxZoom: 19
          })
-         .setView([45, -110], 3);
+         .setView([45, -93], 3);
 
      map.attributionControl.addAttribution('<a href="http://fcc.gov/maps">FCC Maps</a>');
 
