@@ -125,6 +125,17 @@ footer .bull { font-size: 16px; margin: 0 10px; }
 
 .dropdown-menu { z-index: 1001; }
 
+
+#tabs ul li {font-size: 12px; margin: 0px}
+.tabs-x {height: 505px; overflow: auto}
+.co_name, .provider {font-size: 10px}
+#company-table tr:hover, #summary-table tr:hover, #table-summary-competitor-text tr:hover, #provider-table tr:hover {background-color: #eeeeee}
+#company-table tr, #provider-table tr {border-bottom: solid 1px #bbbbbb; cursor: pointer}
+.summary-table {font-size: 10px;}
+.summary-table tr {border-bottom: solid 1px #bbbbbb;}
+#table-summary-competitor-text tr {border-bottom: solid 1px #cccccc;}
+
+
 /* =============================================================================
    Icons
    ========================================================================== */

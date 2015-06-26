@@ -85,22 +85,15 @@
 			<div class="col-md-8">
                 <div class="map-container">
                     <div id="map">
-						<!--
-						<button id="download-btn-small" class="btn-mapCtrl btn-download btn btn-default" data-original-title="Download&nbsp;Data" title="Download Data" data-toggle="tooltip" data-placement="right">
-                            <span class="glyphicon glyphicon-download"></span>
-                            <span class="sr-only">Download Data"</span>
-                        </button> 
-						
-						<button id="legend-btn-small" class="btn-mapCtrl btn-legend btn btn-default" data-original-title="Map&nbsp;Legend" title="Map Legend" style="display: inline-block;" data-toggle="tooltip" data-placement="right" >
-							<span class="icon-legends-2"></span>
-							<span class="sr-only">Legend</span>
-						</button> 
-							-->
+
                     </div>
 					
+					<!--
                     <div id="tooltip_box_div" class="map-toolTip" style="position: absolute; right: 5px; top: 5px">
                         <div id="feature_display_div" class="tooltipTxt"></div>
                     </div>
+					
+					-->
 					
 					
 					
@@ -115,15 +108,6 @@
 								<span id="download-co-name" style="font-size: 11px; font-weight: normal"><span>
 							</div>
 							
-							<!--
-							<div style="padding: 2px;">
-								<input type="radio" name="radio-areas" id="all-areas" value="all" checked>
-								<label for="all-areas">All</label>
-								&nbsp;&nbsp;&nbsp;
-								<input type="radio" name="radio-areas" id="selected-areas" value="selected">
-								<label for="selected-areas">Selected <span style="font-weight: normal;" id="selected-areas-poly-id"></span></label>	
-							</div>	
-							-->
 							
 							<a id="shapefile" href="javascript: void(0);" data-type="shape-zip">Shapefile</a> 
 							&nbsp;|&nbsp; <a id="geojson" href="javascript: void(0);" data-type="geojson">GeoJSON</a> 
@@ -144,6 +128,28 @@
 			</div>
 			
 			<div class="col-md-4">
+			
+			<div id="tabs">
+  <ul>
+    <li><a href="#tabs-1" style="width: 77px">Summary</a></li>
+    <li><a href="#tabs-2" style="width: 80px">Company</a></li>
+    <li><a href="#tabs-3" style="width: 90px">Competitor</a></li>
+  </ul>
+  <div id="tabs-1" class="tabs-x">
+  Info Display Area
+
+  </div>
+  <div id="tabs-2" class="tabs-x">
+  Loading Company List...
+
+	</div>
+  <div id="tabs-3" class="tabs-x">
+  Loading Competitor List...
+
+	</div>
+</div>
+			
+			<!--
 				<div id="mapdata-display" style="height: 390px; overflow: auto; padding: 5x; font-size: 12px; border: solid 0px #000">
 				Summary
 				</div>
@@ -153,11 +159,13 @@
 					<div class="legend" >
 						<div class="map-legend-hd">
 							<span class="icon-legends-2"></span> <span class="map-legend-name">Map Legend</span>
+							-->
 							<!--
 							<button class="btn-closeLegend btn btn-xs pull-right">
 								<span class="glyphicon glyphicon-remove"></span> <span class="sr-only">Hide legend</span>
 							</button>
 							-->
+							<!--
 						</div>
 						<div>
 							<table id="legend-list">
@@ -187,6 +195,8 @@
 						</div>
 					</div>						
 				</div>
+				
+				-->
 
 
 			</div>
@@ -197,6 +207,7 @@
     </main>
     <script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
     <script src="//code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
     <script src="js/vendor/bootstrap.min.js"></script>
     <script src="js/vendor/jszip.min.js"></script>
     <script src="js/vendor/jszip-utils.js"></script>

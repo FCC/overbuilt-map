@@ -186,7 +186,7 @@ var state_name = {
 
      geocoder = L.mapbox.geocoder('mapbox.places-v1');
 
-     L.control.layers({
+     layerControl = new L.Control.Layers({
          'Street': baseStreet.addTo(map),
          'Satellite': baseSatellite,
          'Terrain': baseTerrain
@@ -196,8 +196,10 @@ var state_name = {
 
      }, {
 		position: 'topleft'
+	 }
+	 ).addTo(map);
 	 
-	 }).addTo(map);
+
 	 
 	 
 	map.on("zoomend dragend", function(e) {
@@ -311,30 +313,44 @@ var state_name = {
 	
 	}
 
-var tooltipTxt = "<table>";
+var tooltipTxt = "<table class=\"summary-table\">";
 tooltipTxt += "<tr><td colspan=2><b>" +  p.co_name + ", " + p.state + "</b></td></tr>";
 tooltipTxt += "<tr><td>SAC ID:</td><td>" + p.sac + "</td></tr>";
 tooltipTxt += "<tr><td>Number of Blocks:</td><td>" + p.num_cblock + "</td></tr>";
 tooltipTxt += "<tr><td>SAC Area:</td><td> " + p.sac_area +  "</td></tr>";
-tooltipTxt += "<tr><td>Shape Leng:</td><td> " + p.shape_leng + "</td></tr>";
-tooltipTxt +=  "<tr><td>Shape Area:</td><td> " + p.shape_area + "</td></tr>";
+
 
 	//block info
 	var num_provider = block_json.features.length;
 	var block_fips = block_json.features[0].properties.block_fips
 	var provider_names = "";
+	var provider_list = [];
 	for (i = 0; i < num_provider; i++) {
-	provider_names += block_json.features[i].properties.provider + '<br> '
+	var provider0 = block_json.features[i].properties.provider;
+	if (provider0 != "none") {
+	provider_list.push(block_json.features[i].properties.provider);
 	}
+	}
+	console.log('1= ' + provider_list);
+	provider_list = getUniqArray(provider_list);
+	console.log('2= ' + provider_list);
+	num_provider = provider_list.length;
+	provider_names = "<table id='table-summary-competitor-text'>";
+	for (i = 0; i < num_provider; i++) {
+		provider_names += '<tr><td>' + provider_list[i] + '</td></tr>'
+	}
+	provider_names += '</table>';
 	
-tooltipTxt += "<tr style=\"height: 10px\"><td colspan=2></td></tr>";
+tooltipTxt += "<tr style=\"height: 30px\"><td colspan=2 style=\"vertical-align: bottom\"><b>Block Info:</b></td></tr>";
 tooltipTxt += "<tr><td>Block FIPS:</td><td> " + block_fips + "</td></tr>";
 tooltipTxt += "<tr><td>Number of Competitors:</td><td>" + num_provider + "</td></tr>";
 tooltipTxt += "<tr><td>Competitors:</td><td> " + provider_names + "</td></tr>";
 tooltipTxt += "<yable>";
 
 	
-	$("#mapdata-display").html(tooltipTxt);
+	//$("#mapdata-display").html(tooltipTxt);
+	$("#tabs-1").html(tooltipTxt);
+	$( "#tabs" ).tabs({ active: 0 });
 
 
 	}
@@ -343,6 +359,22 @@ tooltipTxt += "<yable>";
 	
  }
 
+function getUniqArray(a) {
+if (a.length < 2) {
+return a;
+}
+var a = a.sort();
+var u = [];
+var b =[];
+for (var i=0; i<a.length-1; i++) {
+if (a[i] != a[i+1]) {
+b.push(a[i]);
+}
+}
+b.push(a[a.length-1]);
+return b;
+}
+ 
 function getCoNameFromSAC(sac) {
 for (var i = 0; i < allData.features.length; i++) {
 var f = allData.features[i];
@@ -432,7 +464,7 @@ allDataLayer = L.geoJson(allData,  {
   }).addTo(map);
 allDataLayer.setZIndex(999);
 
-//var infoText = makeInfoText();
+var infoText = makeInfoText();
 //showInfo();
 }
 
@@ -458,7 +490,7 @@ console.log(provider_name_sac_uniq[i][0] + ' ' + provider_name_sac_uniq[i][1]);
 
 providerList = [];
 for (i=0; i<provider_name_sac_uniq.length-1; i++) {
-if (provider_name_sac_uniq[i][0] != provider_name_sac_uniq[i+1][0]) {
+if (provider_name_sac_uniq[i][0] != provider_name_sac_uniq[i+1][0] && provider_name_sac_uniq[i][0] != 'none') {
 providerList.push(provider_name_sac_uniq[i][0]);
 }
 }
@@ -483,8 +515,33 @@ sac_latlon_arr.push(sac_latlon_item);
 
 }
 providerSacLatLon[providerList[i]] = sac_latlon_arr;
+}
+
+var text = makeProviderText();
+$("#tabs-3").html(text);
+$(".provider").on("click", function(e) {
+clickedOnProvider(e);
+});
+
 
 }
+
+
+function clickedOnProvider(e) {
+var id =e.target.id;
+var provider = $("#" + id).html();
+zoomToProvider(provider);
+}
+
+function makeProviderText() {
+var text = "<table id='provider-table'>";
+text += "<tr style=\"font-size: 12px; font-weight: bold; border-bottom: solid 2px #000000\"><td>List of Competitors</td></tr>";
+for (var i = 0; i < providerList.length; i++) {
+text += '<tr><td id="' + i + '" class="provider">' + providerList[i] + '</td></tr>';
+}
+text += '</table>';
+
+return text;
 }
 
 
@@ -507,34 +564,35 @@ return {"lat": lat, "lon": lon};
 
 function makeInfoText() {
 var f = allData.features;
-var text = "<table>";
+var text = "<table id=\"company-table\">";
+text += "<tr style=\"font-size: 12px; font-weight: bold; border-bottom: solid 2px #000000\"><td>List of Companies</td></tr>";
 for (var i = 0; i < f.length; i++) {
 var id = f[i].id;
 id = id.replace(".", "-");
 var co_name = f[i].properties.co_name;
-text += "<tr><td  id=\"" + id + "\" class=\"co_name\">" + co_name + "</td></tr>";
+var sac = f[i].properties.sac;
+text += "<tr><td  id=\"" + sac + "\" class=\"co_name\">" + co_name + "</td></tr>";
 }
 text += "</table>";
 
-$("#mapdata-display").html(text);
+$("#tabs-2").html(text);
 //console.log(text);
 
 $(".co_name").on("click", function(e) {
-
 clickedOnName(e.target.id);
-
 });
 
 }
 
-function clickedOnName(id) {
+function clickedOnName(sac) {
+
+zoomToSAC(sac);
 
 var co_json = {"type": "FeaturesCollection", "features": []};
 var features = [];
 for (var i = 0; i < allData.features.length; i++) {
-var id0 = allData.features[i].id;
-id0 = id0.replace(".", "-");
-if (id0 == id) {
+var sac0 = allData.features[i].properties.sac;
+if (sac0 == sac) {
 features.push(allData.features[i]);
 }
 }
@@ -546,31 +604,24 @@ return;
 co_json.features = features;
 
 $(".co_name").css({"font-weight": ""});
-$("#" + id).css({"font-weight": "bold"});
+$("#" + sac).css({"font-weight": "bold"});
 
-if (map.hasLayer(clickedLayer)) {
-map.removeLayer(clickedLayer);
-}
-
-clickedLayer = L.geoJson(co_json,  {
-      style: styleClicked,
-      onEachFeature: onEachFeature_clicked
-  }).addTo(map);
-  
-  var b = clickedLayer.getBounds();
-  map.fitBounds(b);
-  
 var p = co_json.features[0].properties;
 
 var text = makeTooltipTxt(p);
 $("#feature_display_div").html(text);
-$(".map-toolTip").show();
+//$(".map-toolTip").show();
+$("#tabs-1").html(text);
+$( "#tabs" ).tabs({ active: 0 });
 
 
 $("#download-co-name").html(p.co_name);
 $(".download-menu").show();
 
-selected_id = id;
+selected_sac = sac;
+downloadWhat = "sac";
+//selected_id = id;
+
   
 }
 
@@ -609,6 +660,7 @@ if (key == p.sac) {
 
 return;
 }
+
 }
 
 	var url = geo_host + "/geoserver/" + geo_space+ "/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=" + geo_space + ":overbuilt_blocks&maxFeatures=10000&outputFormat=text/javascript&callback=parseResponse&format_options=callback:parseResponse&cql_filter=sac_id='" + p.sac + "'";
@@ -674,8 +726,10 @@ $(".download-menu").show();
 }
 
 function makeTooltipTxt(p) {
-var tooltipTxt = "<table><tr><td colspan=2 style=\"text-align: center; font-weight: bold\">" + p.co_name + "</td></tr>";
-tooltipTxt += "<tr><td style=\"width: 150px\">SAC ID: " + p.sac + "</td><td width: 50%>Number of Blocks: " + p.num_cblock + "</td></tr>";
+var tooltipTxt = "<table class=\"summary-table\"><tr><td colspan=2 style=\"text-align: center; font-weight: bold\">" + p.co_name + "</td></tr>";
+tooltipTxt += "<tr><td>SAC ID: </td><td>" + p.sac + "</td></tr>";
+tooltipTxt += "<tr><td>Number of Blocks: </td><td>" + p.num_cblock + "</td></tr>";
+tooltipTxt += "<tr><td>SAC Area: </td><td>" + p.sac_area + "</td></tr>";
 tooltipTxt += "</table>";
 return tooltipTxt;
 }
@@ -1074,7 +1128,7 @@ function showNationMapData() {
         minLength: 2,
         select: function( event, ui ) {
             setTimeout(function() {searchProvider();}, 200);
-			//searchSAC();
+
         },
         open: function() {
 			$( this ).removeClass( "ui-corner-all" ).addClass( "ui-corner-top" );
@@ -1296,7 +1350,8 @@ map.fitBounds(b);
 var p = sac_json.features[0].properties;
 var text = getCompanyInfo(p);
 
-$("#mapdata-display").html(text);
+$("#tabs-1").html(text);
+$("#tabs").tabs({active: 0});
 
 $("#download-co-name").html(p.co_name + " [" + p.sac + "]");
 $(".download-menu").show();
@@ -1330,7 +1385,9 @@ map.fitBounds(b);
 var p = sac_json.features[0].properties;
 var text = getCompanyInfo(p);
 
-$("#mapdata-display").html(text);
+$("#tabs-1").html(text);
+$("#tabs").tabs({active: 0});
+
 
 $("#download-co-name").html(p.co_name + " [" + p.sac + "]");
 $(".download-menu").show();
@@ -1341,7 +1398,7 @@ downloadWhat = "co_name";
 }
  
  function getCompanyInfo(p) {
- var tooltipTxt = "<table>";
+ var tooltipTxt = "<table class=\"summary-table\">";
 tooltipTxt += "<tr><td colspan=2><b>" +  p.co_name + ", " + p.state + "</b></td></tr>";
 tooltipTxt += "<tr><td>SAC ID:</td><td>" + p.sac + "</td></tr>";
 tooltipTxt += "<tr><td>Number of Blocks:</td><td>" + p.num_cblock + "</td></tr>";
@@ -1353,6 +1410,10 @@ tooltipTxt += "</table>";
  
  function searchProvider() {
 var provider = $("#input-provider").val();
+
+zoomToProvider(provider);
+
+return;
 
 var sac_latlon = providerSacLatLon[provider];
 
@@ -1387,8 +1448,6 @@ zoomToSAC(sac);
 
 var text = getProviderText(provider);
 
-console.log(text);
-
 $("#mapdata-display").html(text);
 
 $("#download-co-name").html(provider);
@@ -1399,9 +1458,59 @@ downloadWhat = "provider";
 }
  
  
+ function zoomToProvider(provider) {
+
+var sac_latlon = providerSacLatLon[provider];
+
+var features = [];
+for (var i = 0; i < sac_latlon.length; i++) {
+var feature = {"type": "Feature",
+				"geometry": {"type": "Point", "coordinates": [sac_latlon[i].lon, sac_latlon[i].lat]},
+				"properties": {"sac": sac_latlon[i].sac, "marker-title": sac_latlon[i].sac}
+				};
+features.push(feature);
+};
+
+var json_provider = {"type": "FeatureCollection", "features": features};
+
+if (map.hasLayer(providerLayer)) {
+map.removeLayer(providerLayer);
+}
+
+providerLayer = L.geoJson(json_provider, {
+			onEachFeature: onEachFeature_provider
+			
+			}).addTo(map);
+
+if (json_provider.features.length > 1) {
+var b = providerLayer.getBounds();
+map.fitBounds(b);
+}
+else {
+var sac = json_provider.features[0].properties.sac;
+zoomToSAC(sac);
+}
+
+var text = getProviderText(provider);
+
+$("#tabs-1").html(text);
+$( "#tabs" ).tabs({ active: 0 });
+
+$("#download-co-name").html(provider);
+$(".download-menu").show();
+selected_provider = provider;
+downloadWhat = "provider";
+
+}
+ 
+ 
+ 
+ 
+ 
+ 
 function getProviderText(provider) {
 
-var text = "<table>";
+var text = '<table class="summary-table">';
 text += "<tr><td>Competitor: </td><td>" + provider + "</td></tr>";
 var sac_latlon = providerSacLatLon[provider];
 var str1 = "";
@@ -1452,10 +1561,16 @@ return f;
  
 
  $(document).ready(function() {
+	 $( "#tabs" ).tabs({ active: 1 });
      createMap();
      setListener();
 	 loadAllData();
 	 setTimeout(function(){ getProviderInfo(); }, 2000);
+	 
+	 
+	$(function() {
+		$( "#tabs" ).tabs();
+	});
 
      $('.btn-legend').click(function(){ 
         $(this).hide();
