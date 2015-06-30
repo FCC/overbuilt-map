@@ -38,7 +38,11 @@ var nowInSAC = "";
 var nowInSACLayer = "";
 var block_layer;
 var providerLayer;
+var allPinsLayer;
 var downloadWhat = "";
+var marker_color_off = "#9999ee";
+var marker_color_on = "#ee0000";
+
 
  var countyStyleHidden = {
           weight: 0,
@@ -202,27 +206,24 @@ var state_name = {
 
 	 
 	 
-	map.on("zoomend dragend", function(e) {
+	map.on("zoomend", function(e) {
 	
-	return;
-	
-	if (map.getZoom() >= 7) {
-		if (!map.hasLayer(wms_counties_merge)) {
-			map.addLayer(wms_counties_merge);
-		}
+	if (map.getZoom() >= 10) {
+	//remove Pins
+	for (var i = 0; i < markers.length; i++) {
+	if (map.hasLayer(markers[i])) {
+	map.removeLayer(markers[i]);
+	}
+	}
+
 	}
 	else {
-		//remove county layer
-		if (map.hasLayer(wms_counties_merge)) {
-			map.removeLayer(wms_counties_merge);
-		}
-		//remove clicked county geom
-		if (map.hasLayer(clickedCounty)) {
-			map.removeLayer(clickedCounty);
-		}
-		showNationMapData();
+	//show pins
+	if (!map.hasLayer(markers[0])) {
+	displayAllPins();
 	}
 	
+	}
 	});
 	
 	map.on("click", function(e) {
@@ -274,6 +275,9 @@ var state_name = {
 	providers.push(data.features[i].properties.provider);
 	}
 	}
+	
+	//features = cleanFeatures(features);
+	
 	block_json.features = features;
 	if (block_json.features.length > 0) {
 	console.log("features=" + block_json.features.length);
@@ -302,13 +306,13 @@ var state_name = {
 	}
 	//update tooltip
 	//Sabs infoText
-	var text = "";
+	//var text = "";
 
 	for (var i = 0; i < allData.features.length; i++) {
 	var p0 = allData.features[i].properties;
 	if (p0.sac == nowInSAC) {
 	var p = p0;
-	text += p.co_name + ' ' + p.state + ' ' + p.sac_area + ' ' + p.shape_leng + ' ' +  p.shape_area + ' ' + p.num_cblock;
+	//text += p.co_name + ' ' + p.state + ' ' + p.sac_area + ' ' + p.shape_leng + ' ' +  p.shape_area + ' ' + p.num_cblock;
 	}
 	
 	}
@@ -317,8 +321,6 @@ var tooltipTxt = "<table class=\"summary-table\">";
 tooltipTxt += "<tr><td colspan=2><b>" +  p.co_name + ", " + p.state + "</b></td></tr>";
 tooltipTxt += "<tr><td>SAC ID:</td><td>" + p.sac + "</td></tr>";
 tooltipTxt += "<tr><td>Number of Blocks:</td><td>" + p.num_cblock + "</td></tr>";
-tooltipTxt += "<tr><td>SAC Area:</td><td> " + p.sac_area +  "</td></tr>";
-
 
 	//block info
 	var num_provider = block_json.features.length;
@@ -349,7 +351,7 @@ tooltipTxt += "<yable>";
 
 	
 	//$("#mapdata-display").html(tooltipTxt);
-	$("#tabs-1").html(tooltipTxt);
+	$("#tabs-1-info").html(tooltipTxt);
 	$( "#tabs" ).tabs({ active: 0 });
 
 
@@ -359,6 +361,22 @@ tooltipTxt += "<yable>";
 	
  }
 
+function cleanFeatures(f) {
+if (f.length <= 1) {
+return f;
+}
+if (f.length > 1) {
+var n_ring = [];
+for (var i=0; i < f.length; i++) {
+
+
+}
+
+}
+
+
+}
+ 
 function getUniqArray(a) {
 if (a.length < 2) {
 return a;
@@ -431,6 +449,7 @@ function loadAllData() {
 				if (data.features[0].id.match(/overbuilt_sabs/)){
 				allData = data;
 				displayAllData();
+				displayAllPins();
 				}
 			}
 		});
@@ -467,6 +486,73 @@ allDataLayer.setZIndex(999);
 var infoText = makeInfoText();
 //showInfo();
 }
+
+function displayAllPins() {
+
+var latlon;
+markers = [];
+for (var i = 0; i < allData.features.length; i++) {
+var f = allData.features[i];
+var sac = f.properties.sac;
+console.log(sac);
+var co_name = f.properties.co_name;
+latlon = getSACCenter(sac);
+var option = {icon: L.mapbox.marker.icon({
+				'marker-color': marker_color_off
+			}),
+			title: i,
+			riseOffset: 0,
+			opacity: 0.5
+			};
+markers[i] = L.marker([latlon.lat, latlon.lon], option).addTo(map);
+markers[i].on("click", function(e) {
+var index = e.target.options.title;
+clickedOnPin(index);
+});
+
+markers[i].on("mouseover", function(e) {
+var index = e.target.options.title;
+console.log(e.target.options);
+var icon0 = L.mapbox.marker.icon({
+				'marker-color': marker_color_on
+			});
+markers[index].setIcon(icon0);
+var co_name = allData.features[index].properties.co_name;
+$("#feature_display_div").html(co_name);
+$(".map-toolTip").show();
+markers[index].setZIndexOffset(100);
+});
+
+markers[i].on("mouseout", function(e) {
+var index = e.target.options.title;
+console.log(index);
+var icon0 = L.mapbox.marker.icon({
+				'marker-color': marker_color_off
+			});
+markers[index].setIcon(icon0);
+$("#feature_display_div").html('');
+$(".map-toolTip").hide();
+markers[index].setZIndexOffset(0);
+
+
+});
+
+markers[i].on("click", function(e) {
+var index = e.target.options.title;
+var sac = allData.features[index].properties.sac;
+clickedOnName(sac);
+});
+
+
+
+}
+}
+
+function clickedOnPin(sac) {
+
+console.log("click " + sac);
+}
+
 
 function processProviderInfo() {
 var i, j;
@@ -582,7 +668,42 @@ $(".co_name").on("click", function(e) {
 clickedOnName(e.target.id);
 });
 
+$(".co_name").on("mouseover", function(e) {
+mouseOverName(e.target.id);
+});
+
+$(".co_name").on("mouseout", function(e) {
+mouseOutName(e.target.id);
+});
+
 }
+
+function mouseOverName(sac) {
+for (var i =0; i < allData.features.length; i++) {
+if (allData.features[i].properties.sac == sac) {
+var index = i;
+}
+}
+var icon0 = L.mapbox.marker.icon({
+				'marker-color': marker_color_on
+			});
+markers[index].setIcon(icon0);
+markers[index].setZIndexOffset(100);
+}
+
+function mouseOutName(sac) {
+for (var i =0; i < allData.features.length; i++) {
+if (allData.features[i].properties.sac == sac) {
+var index = i;
+}
+}
+var icon0 = L.mapbox.marker.icon({
+				'marker-color': marker_color_off
+			});
+markers[index].setIcon(icon0);
+markers[index].setZIndexOffset(0);
+}
+
 
 function clickedOnName(sac) {
 
@@ -611,7 +732,7 @@ var p = co_json.features[0].properties;
 var text = makeTooltipTxt(p);
 $("#feature_display_div").html(text);
 //$(".map-toolTip").show();
-$("#tabs-1").html(text);
+$("#tabs-1-info").html(text);
 $( "#tabs" ).tabs({ active: 0 });
 
 
@@ -641,6 +762,14 @@ function onEachFeature_clicked(feature, layer) {
         //mouseout: mouseout
       });
   }
+  
+function onEachFeature_allPins(feature, layer) {
+      layer.on({
+		mouseover: mouseover_allPins,
+        mouseout: mouseout_allPins,
+		click: click_allPins
+      });
+}
   
   
 function mouseover(e) {
@@ -689,6 +818,33 @@ var text = makeTooltipTxt(p);
 $("#feature_display_div").html(text);
 }
 
+function mouseover_allPins(e) {
+var layer = e.target;
+var p = layer.feature.properties;
+$("#feature_display_div").html(p.co_name);
+$(".map-toolTip").show();
+allPinsLayer.eachLayer(function (layer) {  
+console.log(layer.feature.properties);
+  //if(layer.feature.properties.NAME == 'feature 1') {    
+   // layer.setStyle({fillColor :'blue'}) 
+  //}
+});
+}
+
+function mouseout_allPins(e) {
+var layer = e.target;
+var p = layer.feature.properties;
+$(".map-toolTip").hide();
+}
+
+function click_allPins(e) {
+var layer = e.target;
+var p = layer.feature.properties;
+clickedOnName(p.sac);
+
+}
+
+
 function mouseout(e) {
 var layer = e.target;
 layer.setStyle(styleShown);
@@ -729,7 +885,6 @@ function makeTooltipTxt(p) {
 var tooltipTxt = "<table class=\"summary-table\"><tr><td colspan=2 style=\"text-align: center; font-weight: bold\">" + p.co_name + "</td></tr>";
 tooltipTxt += "<tr><td>SAC ID: </td><td>" + p.sac + "</td></tr>";
 tooltipTxt += "<tr><td>Number of Blocks: </td><td>" + p.num_cblock + "</td></tr>";
-tooltipTxt += "<tr><td>SAC Area: </td><td>" + p.sac_area + "</td></tr>";
 tooltipTxt += "</table>";
 return tooltipTxt;
 }
@@ -1350,7 +1505,7 @@ map.fitBounds(b);
 var p = sac_json.features[0].properties;
 var text = getCompanyInfo(p);
 
-$("#tabs-1").html(text);
+$("#tabs-1-info").html(text);
 $("#tabs").tabs({active: 0});
 
 $("#download-co-name").html(p.co_name + " [" + p.sac + "]");
@@ -1385,7 +1540,7 @@ map.fitBounds(b);
 var p = sac_json.features[0].properties;
 var text = getCompanyInfo(p);
 
-$("#tabs-1").html(text);
+$("#tabs-1-info").html(text);
 $("#tabs").tabs({active: 0});
 
 
@@ -1402,7 +1557,6 @@ downloadWhat = "co_name";
 tooltipTxt += "<tr><td colspan=2><b>" +  p.co_name + ", " + p.state + "</b></td></tr>";
 tooltipTxt += "<tr><td>SAC ID:</td><td>" + p.sac + "</td></tr>";
 tooltipTxt += "<tr><td>Number of Blocks:</td><td>" + p.num_cblock + "</td></tr>";
-tooltipTxt += "<tr><td>SAC Area:</td><td> " + p.sac_area +  "</td></tr>";
 tooltipTxt += "</table>";
 
  return tooltipTxt;
@@ -1493,7 +1647,7 @@ zoomToSAC(sac);
 
 var text = getProviderText(provider);
 
-$("#tabs-1").html(text);
+$("#tabs-1-info").html(text);
 $( "#tabs" ).tabs({ active: 0 });
 
 $("#download-co-name").html(provider);

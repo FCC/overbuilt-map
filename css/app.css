@@ -97,10 +97,10 @@ footer .bull { font-size: 16px; margin: 0 10px; }
 .map-download-hd .icon-legends-2 { background-color: transparent; font-size: 10px; }
 .map-download-hd .map-download-name { font-size: 13px; font-weight: bold; }
 
-.download-menu { position: absolute; bottom: 5px; left: 5px; background-color: rgba(255, 255, 255, 0.9); border: solid 1px #888888; border-radius: 3px; padding: 5px; display: none; cursor: pointer; width: 260px; z-index: 1001 }
+.download-menu { background-color: rgba(255, 255, 255, 0.9); border: solid 1px #888888; border-radius: 3px; padding: 5px; display: none; cursor: pointer; width: 215px; z-index: 1001 }
 .download-menu .btn { font-size: 10px;}
 
-.map-toolTip { background-color: #FFF; font-size: 13px; border: 1px solid #999999; border-radius: 5px; padding: 10px; position: absolute; right:5px; top: 5px; width: 450px; display: none; z-index: 999; }
+.map-toolTip { background-color: #FFF; font-size: 13px; border: 1px solid #999999; border-radius: 5px; padding: 10px; position: absolute; right:5px; top: 5px; display: none; z-index: 999; }
 
 .btn-group { display: table-cell; }
 .btn-search { border-bottom-left-radius: 0; border-top-left-radius: 0; margin: 0 0px 0 -1px; }

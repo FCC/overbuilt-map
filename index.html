@@ -87,37 +87,10 @@
                     <div id="map">
 
                     </div>
-					
-					<!--
-                    <div id="tooltip_box_div" class="map-toolTip" style="position: absolute; right: 5px; top: 5px">
-                        <div id="feature_display_div" class="tooltipTxt"></div>
+						
+					<div id="tooltip_box_div" class="map-toolTip" style="z-index: 0">
+                        <div id="feature_display_div" class="tooltipTxt"></div>				
                     </div>
-					
-					-->
-					
-					
-					
-					<div id="download-menu-box" class="download-menu" style="width: 270px">
-						<div class="links-download">
-							<div class="map-download-hd">
-								<span class="glyphicon glyphicon-download"></span> <span class="map-download-name">Download Selected Area</span>
-								<button class="btn btn-xs pull-right" type="button">
-									<span class="glyphicon glyphicon-remove"></span> <span class="sr-only">Hide legend</span>
-								</button>
-								<br>
-								<span id="download-co-name" style="font-size: 11px; font-weight: normal"><span>
-							</div>
-							
-							
-							<a id="shapefile" href="javascript: void(0);" data-type="shape-zip">Shapefile</a> 
-							&nbsp;|&nbsp; <a id="geojson" href="javascript: void(0);" data-type="geojson">GeoJSON</a> 
-
-							&nbsp;|&nbsp; <a id="csv" href="javascript: void(0);" data-type="csv">CSV</a>
-							&nbsp;|&nbsp; <a id="gml" href="javascript: void(0);" data-type="gml">GML</a>
-							<br />
-							<span id="download-zip-popup" style="display: none; font-size: 12px;">Please enable pop-ups - multiple files download.</span>
-						</div>			
-					</div>
 					
 
 					
@@ -136,7 +109,32 @@
     <li><a href="#tabs-3" style="width: 90px">Competitor</a></li>
   </ul>
   <div id="tabs-1" class="tabs-x">
+  <div id="tabs-1-info">
   Info Display Area
+  </div>
+  <p>
+  					<div id="download-menu-box" class="download-menu">
+						<div class="links-download">
+							<div class="map-download-hd">
+								<span class="glyphicon glyphicon-download"></span> <span class="map-download-name">Download block data for</span>
+								<!--
+								<button class="btn btn-xs pull-right" type="button">
+									<span class="glyphicon glyphicon-remove"></span> <span class="sr-only">Hide legend</span>
+								</button>
+								-->
+								<br>
+								<span id="download-co-name" style="font-size: 11px; font-weight: normal"><span>
+							</div>
+							
+							
+							<a id="shapefile" href="javascript: void(0);" data-type="shape-zip" style="color: #0000FF; font-size: 10px">Shapefile</a> 
+							| <a id="geojson" href="javascript: void(0);" data-type="geojson" style="color: #0000FF; font-size: 10px">GeoJSON</a> 
+							| <a id="csv" href="javascript: void(0);" data-type="csv"style="color: #0000FF; font-size: 10px" >CSV</a>
+							| <a id="gml" href="javascript: void(0);" data-type="gml" style="color: #0000FF; font-size: 10px">GML</a>
+							<br />
+							<span id="download-zip-popup" style="display: none; font-size: 12px;">Please enable pop-ups - multiple files download.</span>
+						</div>			
+					</div>
 
   </div>
   <div id="tabs-2" class="tabs-x">
@@ -213,7 +211,8 @@
     <script src="js/vendor/jszip-utils.js"></script>
     <script src="js/vendor/FileSaver.min.js"></script>
 	<script src="js/vendor/Blob.js"></script>
-    <script src="//api.tiles.mapbox.com/mapbox.js/v2.1.4/mapbox.js"></script>
+	<script src='https://api.tiles.mapbox.com/mapbox.js/v2.2.1/mapbox.js'></script>
+	<link href='https://api.tiles.mapbox.com/mapbox.js/v2.2.1/mapbox.css' rel='stylesheet' />
     <script src="//api.tiles.mapbox.com/mapbox.js/plugins/leaflet-pip/v0.0.2/leaflet-pip.js"></script>
     <script src="js/app.js"></script>
 	
