@@ -42,6 +42,7 @@ var allPinsLayer;
 var downloadWhat = "";
 var marker_color_off = "#9999ee";
 var marker_color_on = "#ee0000";
+var activeTab = "company";
 
 
  var countyStyleHidden = {
@@ -210,17 +211,14 @@ var state_name = {
 	
 	if (map.getZoom() >= 10) {
 	//remove Pins
-	for (var i = 0; i < markers.length; i++) {
-	if (map.hasLayer(markers[i])) {
-	map.removeLayer(markers[i]);
-	}
-	}
-
+	removeAllPinsLayer();
 	}
 	else {
 	//show pins
+	if (activeTab != "competitor") {
 	if (!map.hasLayer(markers[0])) {
 	displayAllPins();
+	}
 	}
 	
 	}
@@ -244,19 +242,13 @@ var state_name = {
 	return;
 	}
 
-	
-	
-	
-	console.log("sacData=" + sacData);
-	
 	var hasData = false;
 	for (var key in sacData) {
 		if (key == nowInSAC) {
 			hasData = true;
 		}
 	}
-	console.log("hasData=" + hasData);
-	
+
 	if (!hasData){
 		return;
 	}
@@ -266,7 +258,6 @@ var state_name = {
 	var block_json = {"type": "FeatureCollection"};
 	var features = []
 	var providers = []
-	console.log("lenn features=" + data.features.length);
 	for (var i = 0; i < data.features.length; i++) {
 	var b_layer = L.geoJson(data.features[i]);
 	var results = leafletPip.pointInLayer([lngNow, latNow], b_layer);
@@ -277,13 +268,11 @@ var state_name = {
 	}
 	
 	//features = cleanFeatures(features);
-	
+
 	block_json.features = features;
 	if (block_json.features.length > 0) {
-	console.log("features=" + block_json.features.length);
 	var block_fips = block_json.features[0].properties.block_fips;
 	//show shape
-	console.log("show shape " + block_fips + ' providers=' + providers);
 	if (map.hasLayer(block_layer)) {
 	block_layer.off("click");
 	map.removeLayer(block_layer);
@@ -295,7 +284,7 @@ var state_name = {
 	selected_sac = sac;
 	downloadWhat = "co_name";
 	var co_name = getCoNameFromSAC(sac);
-	$("#download-co-name").html(co_name);
+	$("#download-co-name").html(co_name + ' [SAC: ' + sac + ']');
 	$(".download-menu").show();
 
 	
@@ -320,7 +309,18 @@ var state_name = {
 var tooltipTxt = "<table class=\"summary-table\">";
 tooltipTxt += "<tr><td colspan=2><b>" +  p.co_name + ", " + p.state + "</b></td></tr>";
 tooltipTxt += "<tr><td>SAC ID:</td><td>" + p.sac + "</td></tr>";
-tooltipTxt += "<tr><td>Number of Blocks:</td><td>" + p.num_cblock + "</td></tr>";
+tooltipTxt += "<tr><td>Number of Blocks:</td><td>" + p.num_cblock + "</td></tr></table>";
+
+var sacDetailText = getSACDetailText(p.sac);
+
+var sac_info = "<table class=\"summary-table\"><tr style=\"height: 30px\"><td colspan=2 style=\"vertical-align: bottom\"><b>Competitors in SAC:</b></td></tr>";
+sac_info += "<tr><td>Name</td><td style=\"text-align: right\"># of Blocks</td></tr>";
+for (i = 0; i < sacDetailText.providers.length; i++) {
+sac_info += "<tr><td>" + sacDetailText.providers[i] + "</td><td style=\"text-align: right\">" + sacDetailText.number_blocks[i] + "</td></tr>";
+}
+sac_info += "</table>";
+
+tooltipTxt += sac_info;
 
 	//block info
 	var num_provider = block_json.features.length;
@@ -333,9 +333,7 @@ tooltipTxt += "<tr><td>Number of Blocks:</td><td>" + p.num_cblock + "</td></tr>"
 	provider_list.push(block_json.features[i].properties.provider);
 	}
 	}
-	console.log('1= ' + provider_list);
 	provider_list = getUniqArray(provider_list);
-	console.log('2= ' + provider_list);
 	num_provider = provider_list.length;
 	provider_names = "<table id='table-summary-competitor-text'>";
 	for (i = 0; i < num_provider; i++) {
@@ -343,7 +341,7 @@ tooltipTxt += "<tr><td>Number of Blocks:</td><td>" + p.num_cblock + "</td></tr>"
 	}
 	provider_names += '</table>';
 	
-tooltipTxt += "<tr style=\"height: 30px\"><td colspan=2 style=\"vertical-align: bottom\"><b>Block Info:</b></td></tr>";
+tooltipTxt += "<table class=\"summary-table\"><tr style=\"height: 30px\"><td colspan=2 style=\"vertical-align: bottom\"><b>Block Info:</b></td></tr>";
 tooltipTxt += "<tr><td>Block FIPS:</td><td> " + block_fips + "</td></tr>";
 tooltipTxt += "<tr><td>Number of Competitors:</td><td>" + num_provider + "</td></tr>";
 tooltipTxt += "<tr><td>Competitors:</td><td> " + provider_names + "</td></tr>";
@@ -494,38 +492,34 @@ markers = [];
 for (var i = 0; i < allData.features.length; i++) {
 var f = allData.features[i];
 var sac = f.properties.sac;
-console.log(sac);
+
 var co_name = f.properties.co_name;
 latlon = getSACCenter(sac);
 var option = {icon: L.mapbox.marker.icon({
 				'marker-color': marker_color_off
 			}),
-			title: i,
-			riseOffset: 0,
+			riseOffset: i,
 			opacity: 0.5
 			};
 markers[i] = L.marker([latlon.lat, latlon.lon], option).addTo(map);
-markers[i].on("click", function(e) {
-var index = e.target.options.title;
-clickedOnPin(index);
-});
 
 markers[i].on("mouseover", function(e) {
-var index = e.target.options.title;
-console.log(e.target.options);
+var index = e.target.options.riseOffset;
+
 var icon0 = L.mapbox.marker.icon({
 				'marker-color': marker_color_on
 			});
 markers[index].setIcon(icon0);
 var co_name = allData.features[index].properties.co_name;
-$("#feature_display_div").html(co_name);
+var sac = allData.features[index].properties.sac;
+$("#feature_display_div").html(co_name + ' [SAC: ' + sac + ']');
 $(".map-toolTip").show();
 markers[index].setZIndexOffset(100);
 });
 
 markers[i].on("mouseout", function(e) {
-var index = e.target.options.title;
-console.log(index);
+var index = e.target.options.riseOffset;
+
 var icon0 = L.mapbox.marker.icon({
 				'marker-color': marker_color_off
 			});
@@ -538,7 +532,7 @@ markers[index].setZIndexOffset(0);
 });
 
 markers[i].on("click", function(e) {
-var index = e.target.options.title;
+var index = e.target.options.riseOffset;
 var sac = allData.features[index].properties.sac;
 clickedOnName(sac);
 });
@@ -546,11 +540,6 @@ clickedOnName(sac);
 
 
 }
-}
-
-function clickedOnPin(sac) {
-
-console.log("click " + sac);
 }
 
 
@@ -570,9 +559,7 @@ provider_name_sac_uniq.push(provider_name_sac_all[i]);
 }
 provider_name_sac_uniq.push(provider_name_sac_all[provider_name_sac_all.length-1]);
 
-for (i=0; i<provider_name_sac_uniq.length; i++) {
-console.log(provider_name_sac_uniq[i][0] + ' ' + provider_name_sac_uniq[i][1]);
-}
+
 
 providerList = [];
 for (i=0; i<provider_name_sac_uniq.length-1; i++) {
@@ -582,9 +569,7 @@ providerList.push(provider_name_sac_uniq[i][0]);
 }
 providerList.push(provider_name_sac_uniq[provider_name_sac_uniq.length-1][0]);
 
-for (i=0; i<providerList.length; i++) {
-console.log(providerList[i]);
-}
+
 
 providerSacLatLon = {};
 for (i=0; i<providerList.length; i++) {
@@ -617,6 +602,14 @@ function clickedOnProvider(e) {
 var id =e.target.id;
 var provider = $("#" + id).html();
 zoomToProvider(provider);
+}
+
+function removeAllPinsLayer() {
+for (var i = 0; i < markers.length; i++) {
+if (map.hasLayer(markers[i])) {
+map.removeLayer(markers[i]);
+}
+}
 }
 
 function makeProviderText() {
@@ -662,7 +655,7 @@ text += "<tr><td  id=\"" + sac + "\" class=\"co_name\">" + co_name + "</td></tr>
 text += "</table>";
 
 $("#tabs-2").html(text);
-//console.log(text);
+
 
 $(".co_name").on("click", function(e) {
 clickedOnName(e.target.id);
@@ -706,7 +699,11 @@ markers[index].setZIndexOffset(0);
 
 
 function clickedOnName(sac) {
-
+activeTab = "company";
+//remove provider pins
+if (map.hasLayer(providerLayer)) {
+map.removeLayer(providerLayer);
+}
 zoomToSAC(sac);
 
 var co_json = {"type": "FeaturesCollection", "features": []};
@@ -730,13 +727,13 @@ $("#" + sac).css({"font-weight": "bold"});
 var p = co_json.features[0].properties;
 
 var text = makeTooltipTxt(p);
-$("#feature_display_div").html(text);
-//$(".map-toolTip").show();
+//$("#feature_display_div").html(text);
+$(".map-toolTip").hide();
 $("#tabs-1-info").html(text);
 $( "#tabs" ).tabs({ active: 0 });
 
 
-$("#download-co-name").html(p.co_name);
+$("#download-co-name").html(p.co_name + ' [SAC: ' + p.sac + ']');
 $(".download-menu").show();
 
 selected_sac = sac;
@@ -776,13 +773,11 @@ function mouseover(e) {
 var layer = e.target;
 var p = layer.feature.properties;
 nowInSAC = p.sac;
-console.log("over, nowInSAC=" + nowInSAC);
 
 if (map.hasLayer(nowInSACLayer)){
 map.removeLayer(nowInSACLayer);
 }
 nowInSACLayer = L.geoJson(layer.feature, {style: styleMouseOver}).addTo(map);
-console.log("sac layer " + nowInSACLayer);
 
 for (var key in sacData) {
 if (key == p.sac) {
@@ -793,7 +788,7 @@ return;
 }
 
 	var url = geo_host + "/geoserver/" + geo_space+ "/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=" + geo_space + ":overbuilt_blocks&maxFeatures=10000&outputFormat=text/javascript&callback=parseResponse&format_options=callback:parseResponse&cql_filter=sac_id='" + p.sac + "'";
-console.log(url);
+
 	$.ajax({
 			type: "GET",
 			url: url,
@@ -801,9 +796,9 @@ console.log(url);
 			dataType: "jsonp",
 			jsonpCallback: "parseResponse",
 			success: function(data) {
-			console.log("ajax suc");
+
 			sacData[p.sac] = data;
-			console.log("ajax suc 2 secid=" + p.sac + " sac_len=" + sacData[p.sac].features.length);
+
 
 
 			}
@@ -824,7 +819,7 @@ var p = layer.feature.properties;
 $("#feature_display_div").html(p.co_name);
 $(".map-toolTip").show();
 allPinsLayer.eachLayer(function (layer) {  
-console.log(layer.feature.properties);
+
   //if(layer.feature.properties.NAME == 'feature 1') {    
    // layer.setStyle({fillColor :'blue'}) 
   //}
@@ -886,8 +881,56 @@ var tooltipTxt = "<table class=\"summary-table\"><tr><td colspan=2 style=\"text-
 tooltipTxt += "<tr><td>SAC ID: </td><td>" + p.sac + "</td></tr>";
 tooltipTxt += "<tr><td>Number of Blocks: </td><td>" + p.num_cblock + "</td></tr>";
 tooltipTxt += "</table>";
+
+var tooltipTxt = "<table class=\"summary-table\">";
+tooltipTxt += "<tr><td colspan=2><b>" +  p.co_name + ", " + p.state + "</b></td></tr>";
+tooltipTxt += "<tr><td>SAC ID:</td><td>" + p.sac + "</td></tr>";
+tooltipTxt += "<tr><td>Number of Blocks:</td><td>" + p.num_cblock + "</td></tr></table>";
+
+
 return tooltipTxt;
 }
+
+function getSACDetailText(sac) {
+
+if (sacData) {
+var data_ok = false;
+for (var key in sacData) {
+if (key == sac) {
+data_ok = true;
+}
+}
+}
+
+if (data_ok) {
+
+var n = sacData[sac].features.length;
+var providers = [];
+for (var i = 0; i < n; i++) {
+providers.push(sacData[sac].features[i].properties.provider);
+}
+var providers_uniq = getUniqArray(providers);
+
+var num_for_uniq = [];
+for (i = 0; i < providers_uniq.length; i++) {
+num_for_uniq[i] = 0;
+for (var j = 0; j < providers.length; j++) {
+if (providers_uniq[i] == providers[j]) {num_for_uniq[i]++;}
+}
+}
+
+var text = {"providers": providers_uniq, "number_blocks": num_for_uniq}
+
+return text;
+
+}
+else {
+return "";
+}
+
+}
+
+
 
 function downloadFile(e) {
 var type = e.target.id;
@@ -916,7 +959,7 @@ var url = geo_host + "/geoserver/" + geo_space + "/ows?service=WFS&version=1.0.0
 }
 
 var newwin = window.open(url);
-console.log(url);
+
 }
 
 
@@ -1508,10 +1551,16 @@ var text = getCompanyInfo(p);
 $("#tabs-1-info").html(text);
 $("#tabs").tabs({active: 0});
 
-$("#download-co-name").html(p.co_name + " [" + p.sac + "]");
+$("#download-co-name").html(p.co_name + " [SAC: " + p.sac + "]");
 $(".download-menu").show();
 selected_sac = sac;
 downloadWhat = "sac";
+
+activeTab = "company";
+//remove provider pins
+if (map.hasLayer(providerLayer)) {
+map.removeLayer(providerLayer);
+}
 
 }
 
@@ -1544,7 +1593,7 @@ $("#tabs-1-info").html(text);
 $("#tabs").tabs({active: 0});
 
 
-$("#download-co-name").html(p.co_name + " [" + p.sac + "]");
+$("#download-co-name").html(p.co_name + " [SAC: " + p.sac + "]");
 $(".download-menu").show();
 selected_co_name = co_name;
 selected_sac = p.sac;
@@ -1613,6 +1662,9 @@ downloadWhat = "provider";
  
  
  function zoomToProvider(provider) {
+
+activeTab = "competitor";
+removeAllPinsLayer();
 
 var sac_latlon = providerSacLatLon[provider];
 
