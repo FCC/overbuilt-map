@@ -210,15 +210,28 @@ var state_name = {
 	map.on("zoomend", function(e) {
 	
 	if (map.getZoom() >= 10) {
-	//remove Pins
+	//remove company Pins
 	removeAllPinsLayer();
+	//remove competitor pin
+	if (map.hasLayer(providerLayer)) {
+	map.removeLayer(providerLayer);
+	}
 	}
 	else {
 	//show pins
 	if (activeTab != "competitor") {
+	//show company pins
 	if (!map.hasLayer(markers[0])) {
 	displayAllPins();
 	}
+	}
+	else {
+	//show competitor pins
+	if (!map.hasLayer(providerLayer)) {
+	providerLayer.addTo(map);
+	}
+	
+	
 	}
 	
 	}
@@ -1709,11 +1722,7 @@ downloadWhat = "provider";
 
 }
  
- 
- 
- 
- 
- 
+
 function getProviderText(provider) {
 
 var text = '<table class="summary-table">';
