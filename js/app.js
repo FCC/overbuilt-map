@@ -245,6 +245,15 @@ var state_name = {
 	latNow = e.latlng.lat;
 	lngNow = e.latlng.lng;
 	
+	//if cursor is in the block, do not show info again
+	if (map.hasLayer(block_layer)) {
+	var results = leafletPip.pointInLayer([lngNow, latNow], block_layer);
+	if (results.length > 0) {
+		return;
+	}
+	}
+	
+	//if has no SAC layer, or not in SAC layer, stop
 	if (map.hasLayer(nowInSACLayer)) {
 	var results = leafletPip.pointInLayer([lngNow, latNow], nowInSACLayer);
 	if (results.length == 0) {
@@ -358,7 +367,9 @@ tooltipTxt += "<table class=\"summary-table\"><tr style=\"height: 30px\"><td col
 tooltipTxt += "<tr><td>Block FIPS:</td><td> " + block_fips + "</td></tr>";
 tooltipTxt += "<tr><td>Number of Competitors:</td><td>" + num_provider + "</td></tr>";
 tooltipTxt += "<tr><td>Competitors:</td><td> " + provider_names + "</td></tr>";
-tooltipTxt += "<yable>";
+tooltipTxt += "</table>";
+
+console.log(tooltipTxt);
 
 	
 	//$("#mapdata-display").html(tooltipTxt);
