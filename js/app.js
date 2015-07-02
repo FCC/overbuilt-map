@@ -368,9 +368,6 @@ tooltipTxt += "<tr><td>Block FIPS:</td><td> " + block_fips + "</td></tr>";
 tooltipTxt += "<tr><td>Number of Competitors:</td><td>" + num_provider + "</td></tr>";
 tooltipTxt += "<tr><td>Competitors:</td><td> " + provider_names + "</td></tr>";
 tooltipTxt += "</table>";
-
-console.log(tooltipTxt);
-
 	
 	//$("#mapdata-display").html(tooltipTxt);
 	$("#tabs-1-info").html(tooltipTxt);
