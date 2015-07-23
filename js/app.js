@@ -590,8 +590,6 @@ providerList.push(provider_name_sac_uniq[i][0]);
 }
 providerList.push(provider_name_sac_uniq[provider_name_sac_uniq.length-1][0]);
 
-
-
 providerSacLatLon = {};
 for (i=0; i<providerList.length; i++) {
 var sac_latlon_arr = [];
@@ -610,6 +608,7 @@ providerSacLatLon[providerList[i]] = sac_latlon_arr;
 }
 
 var text = makeProviderText();
+
 $("#tabs-3").html(text);
 $(".provider").on("click", function(e) {
 clickedOnProvider(e);
@@ -1526,6 +1525,7 @@ return list_all;
  
  var list_first = [];
  var list_other = [];
+ 
  for (var i = 0; i < providerList.length; i++) {
  if (providerList[i].match(re_first)){
  list_first.push(providerList[i]);
