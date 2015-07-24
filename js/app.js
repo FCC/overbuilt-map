@@ -633,7 +633,7 @@ map.removeLayer(markers[i]);
 }
 
 function makeProviderText() {
-var text = "<table id='provider-table'>";
+var text = "<table id='provider-table' style=\"width: 100%\">";
 text += "<tr style=\"font-size: 12px; font-weight: bold; border-bottom: solid 2px #000000\"><td>List of Competitors</td></tr>";
 for (var i = 0; i < providerList.length; i++) {
 text += '<tr><td id="' + i + '" class="provider">' + providerList[i] + '</td></tr>';
