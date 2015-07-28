@@ -7,15 +7,15 @@
                                  /_/            
 */
 
-/*
 var geo_host = '//www.broadbandmap.gov';
 var geo_space = 'gis_swat';
 var geo_output = 'application/json'
-*/
 
+/*
 var geo_host = 'http://ltsttm-geo02a:8080';
 var geo_space = 'geo_swat';
 var geo_output = 'application/json'
+*/
 
 var nn = 0;
 var map;
@@ -457,6 +457,7 @@ function parseResponse(data) {
 
 function loadAllData() {
 	var url = geo_host + "/geoserver/" + geo_space+ "/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=" + geo_space + ":overbuilt_sabs&maxFeatures=100&sortBy=co_name&outputFormat=text/javascript&callback=parseResponse&format_options=callback:parseResponse";
+	var url = geo_host + "/geoserver/" + geo_space+ "/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=" + geo_space + ":overbuilt_sabs&maxFeatures=100&sortBy=co_name&outputFormat=json&callback=parseResponse&format_options=callback:parseResponse";
 
 	$.ajax({
 			type: "GET",
@@ -477,6 +478,8 @@ function loadAllData() {
 
 function getProviderInfo() {
 	var url = geo_host + "/geoserver/" + geo_space+ "/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=" + geo_space + ":overbuilt_blocks&maxFeatures=20000&propertyName=provider,sac_id&sortBy=provider,sac_id&outputFormat=text/javascript&callback=parseResponse&format_options=callback:parseResponse";
+	var url = geo_host + "/geoserver/" + geo_space+ "/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=" + geo_space + ":overbuilt_blocks&maxFeatures=20000&propertyName=provider,sac_id&sortBy=provider,sac_id&outputFormat=json&callback=parseResponse&format_options=callback:parseResponse";
+
 	$.ajax({
 			type: "GET",
 			url: url,
@@ -808,6 +811,7 @@ return;
 }
 
 	var url = geo_host + "/geoserver/" + geo_space+ "/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=" + geo_space + ":overbuilt_blocks&maxFeatures=10000&outputFormat=text/javascript&callback=parseResponse&format_options=callback:parseResponse&cql_filter=sac_id='" + p.sac + "'";
+	var url = geo_host + "/geoserver/" + geo_space+ "/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=" + geo_space + ":overbuilt_blocks&maxFeatures=10000&outputFormat=json&callback=parseResponse&format_options=callback:parseResponse&cql_filter=sac_id='" + p.sac + "'";
 
 	$.ajax({
 			type: "GET",
@@ -959,6 +963,7 @@ var type0 = "shape-zip";
 }
 if (type == "geojson"){
 var type0 = "application/json";
+var type0 = "json";
 }
 if (type == "csv"){
 var type0 = "csv";
