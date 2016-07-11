@@ -421,13 +421,11 @@ return "";
 function mapClickAction(e) {
 	var lat = e.latlng.lat;
 	var lng = e.latlng.lng;
-	var url = geo_host + "/" + geo_space+ "/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=" + geo_space + ":caftwo_caf_counties_merge&maxFeatures=1&outputFormat=json&cql_filter=contains(geom,%20POINT(" + lng + " " + lat + "))&callback=parseResponse&format_options=callback:parseResponse";
+	var url = geo_host + "/" + geo_space+ "/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=" + geo_space + ":caftwo_caf_counties_merge&maxFeatures=1&outputFormat=json&cql_filter=contains(geom,%20POINT(" + lng + " " + lat + "))";
 
 	$.ajax({
 		type: "GET",
-		url: url,
-		dataType: "jsonp",
-		jsonpCallback: "parseResponse",
+		url: url,		
 		success: function(data) {
 			displayMapData(data);
 		}
@@ -456,9 +454,7 @@ function loadAllData() {
 	$.ajax({
 			type: "GET",
 			url: url,
-			dataType: "json",
-			// dataType: "jsonp",
-			// jsonpCallback: "parseResponse",
+			dataType: "json",			
 			success: function(data) {
 				if (data.features[0].id.match(/overbuilt_sabs/)){
 				allData = data;
@@ -477,9 +473,7 @@ function getProviderInfo() {
 	$.ajax({
 			type: "GET",
 			url: url,
-			dataType: "json",
-			// dataType: "jsonp",
-			// jsonpCallback: "parseResponse",
+			dataType: "json",			
 			success: function(data) {
 				if (data.features[0].id.match(/overbuilt_blocks/)){
 				providerInfo = data;
@@ -805,7 +799,7 @@ return;
 }
 
 	var url = geo_host + "/" + geo_space+ "/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=" + geo_space + ":overbuilt_blocks&maxFeatures=10000&outputFormat=text/javascript&callback=parseResponse&format_options=callback:parseResponse&cql_filter=sac_id='" + p.sac + "'";
-	var url = geo_host + "/" + geo_space+ "/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=" + geo_space + ":overbuilt_blocks&maxFeatures=10000&outputFormat=json&callback=parseResponse&format_options=callback:parseResponse&cql_filter=sac_id='" + p.sac + "'";
+	var url = geo_host + "/" + geo_space+ "/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=" + geo_space + ":overbuilt_blocks&maxFeatures=10000&outputFormat=application/json&cql_filter=sac_id='" + p.sac + "'";
 
 	$.ajax({
 			type: "GET",
@@ -1168,7 +1162,7 @@ function showNationMapData() {
 
                  map.setView([geo_lat, geo_lon], 12);
 				 
-				var url = geo_host + "/" + geo_space+ "/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=" + geo_space + ":caftwo_caf_counties_merge&maxFeatures=1&outputFormat=json&cql_filter=contains(geom,%20POINT(" + geo_lon + " " + geo_lat + "))&callback=parseResponse&format_options=callback:parseResponse";
+				var url = geo_host + "/" + geo_space+ "/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=" + geo_space + ":caftwo_caf_counties_merge&maxFeatures=1&outputFormat=application/json&cql_filter=contains(geom,%20POINT(" + geo_lon + " " + geo_lat + "))";
 
 	//$.ajax({
 	//		type: "GET",
