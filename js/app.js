@@ -153,12 +153,16 @@ var state_name = {
 	  
  function createMap() {
  
-     L.mapbox.accessToken = 'pk.eyJ1IjoiZmNjIiwiYSI6InBiaGMyLU0ifQ.LOmVYpUCFv2yWpbvxDdQNg';
-     map = L.mapbox.map('map', 'fcc.k74ed5ge', {
-             attributionControl: true,
+      L.mapbox.accessToken = 'pk.eyJ1IjoiZmNjIiwiYSI6InBiaGMyLU0ifQ.LOmVYpUCFv2yWpbvxDdQNg';
+/*      map = L.mapbox.map('map', 'fcc.k74ed5ge', {
+              attributionControl: true,
              maxZoom: 19
          })
-         .setView([45, -93], 3);
+          .setView([45, -93], 3); */
+	 
+ 	  map = L.mapbox.map('map').setView([39.5, -98.5], 4);
+	  
+	  L.mapbox.styleLayer('mapbox://styles/mapbox/light-v10').addTo(map); 
 
      map.attributionControl.addAttribution('<a href="http://fcc.gov/maps">FCC Maps</a>');
 
